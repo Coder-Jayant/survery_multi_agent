@@ -159,7 +159,9 @@ def run(
         "- Include specific numbers (CSAT %, avg rating, response counts)\n"
         "- Reference the business context where relevant\n"
         "- End with a concrete, actionable recommendation\n"
-        "- Write in business-professional tone\n\n"
+        "- Write in business-professional tone\n"
+        "- DO NOT apologize or state that you cannot create graphs or visualizations. The UI automatically renders charts. Focus ONLY on the narrative.\n"
+        "- Keep the narrative concise (1-2 paragraphs max). Do not use bloated markdown headers like 'Executive Summary' or 'Detailed Analysis'.\n\n"
         f"**Business Question**: {task.context.get('original_question', task.intent)}\n\n"
         f"**Structured Data**:\n{context_block}"
     )
