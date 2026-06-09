@@ -1,0 +1,21 @@
+{
+  "provider": "groq",
+  "model": "llama-3.3-70b-versatile",
+  "api_keys": {
+    "groq": "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",
+    "openai": "",
+    "gemini": "AQ.Ab8RN6IY88QLecn78-WaRVW0D5eTKJc_1X27OOYher0KVWyGQA",
+    "anthropic": "",
+    "grok": ""
+  },
+  "embedding_model": "all-MiniLM-L6-v2",
+  "retrieval": {
+    "top_k": 3,
+    "strategy": "qa_block",
+    "score_threshold": 0.1
+  },
+  "active_kb": "default",
+  "active_dataset": "survey_responses.json",
+  "temperature": 0.3,
+  "max_tokens": 512
+}

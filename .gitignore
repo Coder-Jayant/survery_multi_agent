@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+
+# Environment
+.env
+
+# Build artifacts (not frontend/dist — Railway builds it)
+dist/
+build/
+
+# Large project zips
+minisense/
+minisense.zip
+
+# Sensitive / unused
+Assignment.docx
+.DS_Store
+
+# survey_responses.json and rag/vector_store/ are intentionally committed
+# so Railway has them on first boot without needing a slow generation step.

@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniSense — Survey Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #080d1a;
+      --bg2:       #0d1526;
+      --bg3:       #111d34;
+      --border:    rgba(255,255,255,0.07);
+      --green:     #22c55e;
+      --green-dim: rgba(34,197,94,0.12);
+      --blue:      #3b82f6;
+      --blue-dim:  rgba(59,130,246,0.12);
+      --purple:    #a855f7;
+      --purple-dim:rgba(168,85,247,0.12);
+      --orange:    #f59e0b;
+      --orange-dim:rgba(245,158,11,0.12);
+      --red:       #ef4444;
+      --text:      #e2e8f0;
+      --text-dim:  #64748b;
+      --text-mid:  #94a3b8;
+    }
+
+    html, body { 
+      height: 100vh; 
+      margin: 0; 
+      overflow: hidden; 
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 28px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8,13,26,0.9);
+      backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo {
+      width: 36px; height: 36px;
+      background: var(--green);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .brand h1 { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+    .brand p  { font-size: 11px; color: var(--text-dim); margin-top: 1px; }
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      margin-left: auto;
+      animation: pulse-dot 2s infinite;
+    }
+    @keyframes pulse-dot {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.4; }
+    }
+    .status-label { font-size: 11px; color: var(--text-dim); }
+
+    /* ── Layout ──────────────────────────────────────────────── */
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 0;
+      min-height: 0;
+    }
+
+    /* ── Left panel ──────────────────────────────────────────── */
+    .left {
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .input-section {
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .input-section label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+    .input-wrapper {
+      position: relative;
+    }
+    #question-input {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      padding: 14px 16px;
+      resize: none;
+      outline: none;
+      transition: border-color 0.2s;
+      min-height: 90px;
+    }
+    #question-input:focus { border-color: rgba(34,197,94,0.4); }
+    #question-input::placeholder { color: var(--text-dim); }
+
+    #ask-btn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 13px;
+      background: var(--green);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    #ask-btn:hover:not(:disabled) { background: #16a34a; transform: translateY(-1px); }
+    #ask-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    #ask-btn .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(0,0,0,0.3);
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    #ask-btn.loading .spinner { display: block; }
+    #ask-btn.loading .btn-text { display: none; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Preset questions ────────────────────────────────────── */
+    .presets-section {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    .presets-section label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-dim);
+      display: block;
+      margin-bottom: 10px;
+    }
+    .preset-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text-mid);
+      font-size: 12px;
+      font-family: 'Inter', sans-serif;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .preset-btn:hover { border-color: rgba(34,197,94,0.3); color: var(--text); background: var(--green-dim); }
+    .preset-btn:last-child { margin-bottom: 0; }
+
+    /* ── Answer panel ────────────────────────────────────────── */
+    .answer-section {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+    .answer-section::-webkit-scrollbar { width: 4px; }
+    .answer-section::-webkit-scrollbar-track { background: transparent; }
+    .answer-section::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 12px;
+      color: var(--text-dim);
+    }
+    .empty-state .icon { font-size: 36px; opacity: 0.3; }
+    .empty-state p { font-size: 13px; }
+
+    .answer-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      animation: slide-up 0.3s ease;
+    }
+    @keyframes slide-up {
+      from { opacity: 0; transform: translateY(10px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .answer-card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .answer-card-header .tag {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--green);
+      background: var(--green-dim);
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .answer-card-header .q {
+      font-size: 13px;
+      color: var(--text-mid);
+      flex: 1;
+    }
+    .answer-narrative {
+      padding: 20px;
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+    }
+    .metric-cell {
+      background: var(--bg2);
+      padding: 16px 20px;
+    }
+    .metric-cell .metric-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+    .metric-cell .metric-value {
+      font-size: 22px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+    .metric-cell .metric-value.green { color: var(--green); }
+    .metric-cell .metric-value.blue  { color: var(--blue); }
+    .metric-cell .metric-value.orange{ color: var(--orange); }
+    .metric-cell .metric-value.red   { color: var(--red); }
+    .answer-trace {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .trace-label { font-size: 10px; color: var(--text-dim); }
+    .trace-chip {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-mid);
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .trace-arrow { color: var(--text-dim); font-size: 10px; }
+
+    /* ── Right panel (agent feed) ────────────────────────────── */
+    .right {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--bg);
+    }
+    .feed-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .feed-header h2 { font-size: 13px; font-weight: 600; }
+    .feed-header span { font-size: 11px; color: var(--text-dim); }
+    #feed-count {
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+    }
+    .live-indicator {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      display: none;
+    }
+    .live-indicator.active {
+      display: block;
+      animation: pulse-dot 1s infinite;
+    }
+
+    #feed {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    #feed::-webkit-scrollbar { width: 4px; }
+    #feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .feed-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--text-dim);
+    }
+    .feed-empty .icon { font-size: 32px; opacity: 0.2; }
+    .feed-empty p { font-size: 12px; }
+
+    /* ── Feed events ─────────────────────────────────────────── */
+    .event {
+      border-radius: 10px;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      font-size: 12px;
+      animation: event-in 0.25s ease;
+      position: relative;
+    }
+    @keyframes event-in {
+      from { opacity: 0; transform: translateX(8px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .event.plan      { background: var(--purple-dim); border-color: rgba(168,85,247,0.2); }
+    .event.agent_start { background: var(--blue-dim);   border-color: rgba(59,130,246,0.2); }
+    .event.tool_call { background: var(--bg3);           border-color: var(--border); }
+    .event.tool_result { background: var(--bg3);         border-color: rgba(34,197,94,0.1); }
+    .event.agent_done{ background: var(--green-dim);    border-color: rgba(34,197,94,0.2); }
+    .event.summary   { background: var(--orange-dim);   border-color: rgba(245,158,11,0.2); }
+    .event.done      { background: var(--green-dim);    border-color: rgba(34,197,94,0.4); }
+    .event.error     { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); }
+
+    .event-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .event-icon { font-size: 13px; line-height: 1; }
+    .event-type {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .event.plan      .event-type { color: var(--purple); }
+    .event.agent_start .event-type { color: var(--blue); }
+    .event.tool_call .event-type { color: var(--text-mid); }
+    .event.tool_result .event-type { color: var(--green); }
+    .event.agent_done .event-type { color: var(--green); }
+    .event.summary   .event-type { color: var(--orange); }
+    .event.done      .event-type { color: var(--green); }
+    .event.error     .event-type { color: var(--red); }
+
+    .event-time {
+      margin-left: auto;
+      font-size: 10px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .event-body { color: var(--text-mid); line-height: 1.5; }
+    .event-body strong { color: var(--text); font-weight: 500; }
+
+    .agent-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .agent-badge.data_agent    { background: var(--blue-dim);   color: var(--blue);   }
+    .agent-badge.rag_agent     { background: var(--purple-dim); color: var(--purple); }
+    .agent-badge.comparison_agent { background: var(--orange-dim);color: var(--orange);}
+    .agent-badge.summary_agent { background: var(--green-dim);  color: var(--green);  }
+
+    .tool-chip {
+      display: inline-block;
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 2px 7px;
+      border-radius: 4px;
+      color: var(--text-mid);
+      margin-top: 4px;
+    }
+    .tool-chip.result { border-color: rgba(34,197,94,0.2); color: var(--green); }
+
+    .plan-tasks {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    .plan-task {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .plan-step { font-size: 10px; color: var(--text-dim); width: 16px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🌿</div>
+  <div class="brand">
+    <h1>MiniSense</h1>
+    <p>GreenLeaf Bistro — Survey Intelligence</p>
+  </div>
+  <span class="status-label">API</span>
+  <div class="status-dot" id="api-dot"></div>
+</header>
+
+<main>
+  <!-- ── Left panel ──────────────────────────────────────── -->
+  <div class="left">
+    <div class="input-section">
+      <label>Ask a Business Question</label>
+      <div class="input-wrapper">
+        <textarea
+          id="question-input"
+          placeholder="e.g. What are the top complaints in May vs April?"
+          rows="3"
+        ></textarea>
+      </div>
+      <button id="ask-btn" onclick="submitQuestion()">
+        <div class="spinner"></div>
+        <span class="btn-text">▶ &nbsp; Analyze</span>
+      </button>
+    </div>
+
+    <div class="presets-section">
+      <label>Quick Questions</label>
+      <button class="preset-btn" onclick="setQuestion(this)">
+        What are the top 3 complaints in May 2026 vs April?
+      </button>
+      <button class="preset-btn" onclick="setQuestion(this)">
+        What is the current CSAT score and are we meeting our target?
+      </button>
+      <button class="preset-btn" onclick="setQuestion(this)">
+        Are wait time complaints increasing? What does the FAQ say?
+      </button>
+      <button class="preset-btn" onclick="setQuestion(this)">
+        How does GreenLeaf handle customer complaints?
+      </button>
+    </div>
+
+    <div class="answer-section" id="answer-section">
+      <div class="empty-state" id="empty-state">
+        <div class="icon">📊</div>
+        <p>Your answer will appear here</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Right panel (live feed) ─────────────────────────── -->
+  <div class="right">
+    <div class="feed-header">
+      <div class="live-indicator" id="live-indicator"></div>
+      <h2>Agent Activity</h2>
+      <span>Real-time execution trace</span>
+      <span id="feed-count"></span>
+    </div>
+    <div id="feed">
+      <div class="feed-empty" id="feed-empty">
+        <div class="icon">⚡</div>
+        <p>Waiting for a question…</p>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const API = 'http://localhost:8000';
+  let eventCount = 0;
+  let currentEs = null;
+
+  // ── Preset questions ──────────────────────────────────────
+  function setQuestion(btn) {
+    document.getElementById('question-input').value = btn.textContent.trim();
+    document.getElementById('question-input').focus();
+  }
+
+  // ── Submit ────────────────────────────────────────────────
+  function submitQuestion() {
+    const q = document.getElementById('question-input').value.trim();
+    if (!q) return;
+
+    // Reset state
+    if (currentEs) { currentEs.close(); currentEs = null; }
+    clearFeed();
+    clearAnswer();
+    setLoading(true);
+
+    const es = new EventSource(`${API}/stream?question=${encodeURIComponent(q)}`);
+    currentEs = es;
+
+    es.onmessage = (e) => {
+      const event = JSON.parse(e.data);
+      handleEvent(event, q);
+      if (event.type === 'done' || event.type === 'error') {
+        es.close();
+        currentEs = null;
+        setLoading(false);
+        stopLive();
+      }
+    };
+    es.onerror = () => {
+      addEventCard('error', '❌', 'ERROR', 'Connection failed. Is the API running?<br>Run: <code>uvicorn api.main:app --reload</code>');
+      es.close();
+      setLoading(false);
+      stopLive();
+    };
+
+    document.getElementById('live-indicator').classList.add('active');
+  }
+
+  // ── Event handler ─────────────────────────────────────────
+  function handleEvent(ev, question) {
+    eventCount++;
+    document.getElementById('feed-count').textContent = `${eventCount} events`;
+
+    const ts = new Date().toLocaleTimeString('en', {hour12: false});
+
+    switch (ev.type) {
+      case 'plan': {
+        const tasksHtml = ev.tasks.map((t, i) =>
+          `<div class="plan-task">
+            <span class="plan-step">${i+1}.</span>
+            <span class="agent-badge ${t.agent}">${agentIcon(t.agent)} ${t.agent}</span>
+            <span style="color:var(--text-dim);font-size:11px">${t.intent}</span>
+           </div>`
+        ).join('');
+        addEventCard('plan', '🧠', 'PLAN CREATED', `
+          <div>Orchestrator decomposed question into <strong>${ev.count}</strong> tasks</div>
+          <div class="plan-tasks">${tasksHtml}</div>
+        `, ts);
+        break;
+      }
+
+      case 'agent_start': {
+        const isLast = ev.agent === 'summary_agent';
+        addEventCard(
+          isLast ? 'summary' : 'agent_start',
+          isLast ? '✍️' : '▶',
+          `STEP ${ev.step}/${ev.total}`,
+          `<span class="agent-badge ${ev.agent}">${agentIcon(ev.agent)} ${ev.agent}</span>
+           &nbsp;${ev.intent}`,
+          ts
+        );
+        break;
+      }
+
+      case 'tool_call': {
+        const argsStr = Object.entries(ev.args || {})
+          .map(([k,v]) => `${k}=${JSON.stringify(v)}`).join(', ');
+        addEventCard('tool_call', '🔧', 'TOOL CALL',
+          `<span class="tool-chip">${ev.tool}(${argsStr})</span>`, ts);
+        break;
+      }
+
+      case 'tool_result': {
+        addEventCard('tool_result', '✓', 'TOOL RESULT',
+          `<span class="tool-chip result">${ev.tool} → ${ev.result}</span>`, ts);
+        break;
+      }
+
+      case 'agent_done': {
+        let detail = '';
+        const r = ev.result || {};
+        if (ev.agent === 'data_agent') {
+          detail = `CSAT <strong>${r.csat}%</strong> &nbsp;|&nbsp; avg ${r.avg_rating} &nbsp;|&nbsp; ${(r.responses||0).toLocaleString()} responses &nbsp;|&nbsp; period: ${r.period}<br>
+                    Top themes: <strong>${(r.themes||[]).join(', ')}</strong>`;
+        } else if (ev.agent === 'rag_agent') {
+          detail = (r.chunks||[]).map(c =>
+            `<div><span class="tool-chip">${c.id}</span> score=${c.score} &nbsp; ${c.preview}…</div>`
+          ).join('');
+        } else if (ev.agent === 'comparison_agent') {
+          const dir = r.delta_csat >= 0 ? '▲' : '▼';
+          const col = r.delta_csat >= 0 ? 'var(--green)' : 'var(--red)';
+          detail = `CSAT delta <strong style="color:${col}">${dir} ${Math.abs(r.delta_csat).toFixed(1)}pp</strong>
+                    &nbsp;|&nbsp; avg delta ${r.delta_avg_rating > 0 ? '+' : ''}${r.delta_avg_rating?.toFixed(3) ?? ''}<br>
+                    Emerging: <strong>${(r.emerging||[]).join(', ') || 'none'}</strong>
+                    &nbsp;|&nbsp; Declining: <strong>${(r.declining||[]).join(', ') || 'none'}</strong>`;
+        }
+        addEventCard('agent_done', '✅', `${ev.agent.toUpperCase()} DONE`, detail, ts);
+        break;
+      }
+
+      case 'done': {
+        addEventCard('done', '🎉', 'COMPLETE',
+          `<strong>Answer ready</strong> — ${(ev.answer?.trace||[]).join(' → ')}`, ts);
+        renderAnswer(question, ev.answer);
+        break;
+      }
+
+      case 'error': {
+        addEventCard('error', '❌', 'ERROR', ev.message, ts);
+        break;
+      }
+    }
+
+    // Auto-scroll feed
+    const feed = document.getElementById('feed');
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  // ── Render final answer ───────────────────────────────────
+  function renderAnswer(question, answer) {
+    const m = answer.metrics || {};
+    const section = document.getElementById('answer-section');
+
+    // Build metrics cells
+    const metricsHtml = buildMetrics(m);
+
+    // Trace chips
+    const traceHtml = (answer.trace || []).map((t, i, arr) =>
+      `<span class="trace-chip">${t}</span>${i < arr.length-1 ? '<span class="trace-arrow">→</span>' : ''}`
+    ).join('');
+
+    section.innerHTML = `
+      <div class="answer-card">
+        <div class="answer-card-header">
+          <span class="tag">Answer</span>
+          <span class="q">${escHtml(question)}</span>
+        </div>
+        <div class="answer-narrative">${escHtml(answer.narrative)}</div>
+        ${metricsHtml}
+        <div class="answer-trace">
+          <span class="trace-label">Trace:</span>
+          ${traceHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  function buildMetrics(m) {
+    const cells = [];
+    if (m.csat !== undefined) cells.push({label:'CSAT Score', val:`${m.csat}%`, cls: m.csat >= 50 ? 'green' : 'red'});
+    if (m.avg_rating !== undefined) cells.push({label:'Avg Rating', val:`${m.avg_rating}/5`, cls:'blue'});
+    if (m.total_responses !== undefined) cells.push({label:'Responses', val:Number(m.total_responses).toLocaleString(), cls:'blue'});
+    if (m.delta_csat !== undefined) {
+      const sign = m.delta_csat >= 0 ? '+' : '';
+      cells.push({label:'CSAT Change', val:`${sign}${m.delta_csat}pp`, cls: m.delta_csat >= 0 ? 'green' : 'red'});
+    }
+    if (m.delta_avg_rating !== undefined) {
+      const sign = m.delta_avg_rating >= 0 ? '+' : '';
+      cells.push({label:'Rating Change', val:`${sign}${m.delta_avg_rating}`, cls: m.delta_avg_rating >= 0 ? 'green' : 'red'});
+    }
+    if (cells.length === 0) return '';
+    const html = cells.map(c =>
+      `<div class="metric-cell">
+         <div class="metric-label">${c.label}</div>
+         <div class="metric-value ${c.cls}">${c.val}</div>
+       </div>`
+    ).join('');
+    return `<div class="metrics-grid">${html}</div>`;
+  }
+
+  // ── Feed helpers ──────────────────────────────────────────
+  function addEventCard(type, icon, label, bodyHtml, ts) {
+    const feed = document.getElementById('feed');
+    const empty = document.getElementById('feed-empty');
+    if (empty) empty.remove();
+
+    const el = document.createElement('div');
+    el.className = `event ${type}`;
+    el.innerHTML = `
+      <div class="event-header">
+        <span class="event-icon">${icon}</span>
+        <span class="event-type">${label}</span>
+        <span class="event-time">${ts||''}</span>
+      </div>
+      <div class="event-body">${bodyHtml}</div>
+    `;
+    feed.appendChild(el);
+  }
+
+  function clearFeed() {
+    eventCount = 0;
+    document.getElementById('feed-count').textContent = '';
+    document.getElementById('feed').innerHTML = '';
+  }
+
+  function clearAnswer() {
+    const section = document.getElementById('answer-section');
+    section.innerHTML = '<div class="empty-state" id="empty-state"><div class="icon">⏳</div><p>Analyzing…</p></div>';
+  }
+
+  function setLoading(on) {
+    const btn = document.getElementById('ask-btn');
+    btn.disabled = on;
+    btn.classList.toggle('loading', on);
+  }
+
+  function stopLive() {
+    document.getElementById('live-indicator').classList.remove('active');
+  }
+
+  // ── Utils ─────────────────────────────────────────────────
+  function agentIcon(agent) {
+    return {data_agent:'📊', rag_agent:'🔍', comparison_agent:'📈', summary_agent:'✍️'}[agent] || '🤖';
+  }
+
+  function escHtml(s) {
+    return String(s)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/\n/g,'<br>');
+  }
+
+  // ── Allow Enter (Shift+Enter for newline) ─────────────────
+  document.getElementById('question-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitQuestion(); }
+  });
+
+  // ── Check API health on load ──────────────────────────────
+  fetch(`${API}/health`)
+    .then(r => r.json())
+    .then(() => {
+      document.getElementById('api-dot').style.background = 'var(--green)';
+    })
+    .catch(() => {
+      document.getElementById('api-dot').style.background = 'var(--red)';
+      document.getElementById('api-dot').style.boxShadow = '0 0 8px var(--red)';
+    });
+</script>
+</body>
+</html>

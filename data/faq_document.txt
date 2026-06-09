@@ -1,0 +1,268 @@
+GreenLeaf Bistro — Customer Experience & Operations FAQ
+========================================================
+Version 5.0 | Updated June 2026 | Customer Experience Team
+
+About GreenLeaf Bistro
+-----------------------
+GreenLeaf Bistro is a health-focused café and bistro chain serving fresh, locally sourced meals and beverages across 12 locations in the greater metro area. Founded in 2018, we operate seven days a week and pride ourselves on fast, friendly service and sustainable practices. Our mission is to make wholesome food accessible, enjoyable, and affordable for every customer. We serve approximately 4,000 guests per day across all locations, handling over 1.4 million visits annually.
+
+Q: What are your most popular menu items?
+A: Our top sellers are the Avocado Toast, Garden Bowl, and Cold Brew Coffee. The Avocado Toast is served on sourdough with cherry tomatoes, microgreens, and a drizzle of chili oil. The Garden Bowl features quinoa, roasted seasonal vegetables, chickpeas, and tahini dressing. Our Cold Brew Coffee is slow-steeped for 20 hours in original, vanilla, and oat-milk variants. Seasonal specials rotate monthly — currently featuring the Mango Chili Wrap, Matcha Chia Pudding, and Roasted Beet Flatbread.
+
+Q: What are your opening hours?
+A: We are open Monday to Friday from 7:00 AM to 9:00 PM, and Saturday to Sunday from 8:00 AM to 10:00 PM. Our kitchen closes 30 minutes before closing time. Three locations (Market Street, Westside, Airport Terminal B) operate extended hours until 10:30 PM on weekdays. Holiday hours are posted on our website and app at least 72 hours in advance.
+
+Q: What is your average wait time?
+A: We target under 10 minutes for counter orders during off-peak hours. Peak hours (12:00–1:30 PM and 6:00–8:00 PM) may see 15–25 minute waits. Mobile and online pre-orders are given priority and are typically ready within 8 minutes even during peak times. Wait time data is available on the app, updated every 2 minutes. We deploy additional staff when wait times exceed 15 minutes.
+
+Q: Do you accommodate dietary restrictions?
+A: Yes. Our menu clearly marks vegan (V), gluten-free (GF), nut-free (NF), dairy-free (DF), and low-FODMAP (LF) options. We maintain separate preparation surfaces and colour-coded utensils for allergen-sensitive orders. Our allergen matrix is available at every counter and on our website. We introduced a dedicated gluten-free prep station at 8 of our 12 locations in March 2026.
+
+Q: How do you handle complaints?
+A: All complaints are escalated to the shift manager within 15 minutes of being raised. Refunds or order replacements are offered on the spot for quality issues. For digital complaints (app, web form, or survey), our team responds within 24 hours on weekdays and 48 hours on weekends. Recurring complaints trigger a Tier 3 root-cause review within 72 hours. Every complaint is logged with a reference number and resolution is communicated via the same channel used to submit it.
+
+Q: What is your CSAT target and how do you track it?
+A: We aim for a CSAT score of 4.5 out of 5. Scores below 4.0 trigger a root-cause review within 48 hours. CSAT is tracked weekly by location, channel (mobile, web, kiosk, email), and time of day. We break CSAT down by theme (food quality, wait time, staff, cleanliness, pricing, app) to pinpoint which operational area is driving dissatisfaction. Monthly CSAT reports are shared with all team leads. Our internal stretch target is 70% for Q3 2026.
+
+Q: What caused the CSAT decline from March to May 2026?
+A: CSAT dropped from 68.5% in March to 47.9% in April and 31.3% in May 2026. Root-cause analysis identified three primary drivers: (1) App-related complaints surged from 24.1% to 52.3% of all complaints following a payment gateway migration that introduced checkout errors on Android. (2) Wait time complaints grew as foot traffic exceeded capacity at two locations. (3) A 4.5% price adjustment in April increased pricing complaints. Our engineering team has deployed hotfixes reducing Android payment failures from 12% to 1.8%. We have also hired four additional part-time staff at the two affected locations.
+
+Q: How are app issues being addressed?
+A: The GreenLeaf app experienced stability issues in April-May 2026 following the Order v3.0 platform upgrade: Android payment gateway timeouts (~12% of checkouts), session timeout errors causing lost carts, and push notification delays. Three hotfix releases (v3.0.1–v3.0.3) addressed critical payment flow issues. As of May 31, the payment timeout rate is 1.8%, targeting sub-1% with the v3.1 release in June 2026. Users should update to v3.0.3 or later or use our mobile web at order.greenleafbistro.com as a temporary alternative.
+
+Q: Do you have a loyalty or rewards program?
+A: Yes. GreenLeaf Rewards is our loyalty program, available via the mobile app. Earn 1 point per $1 spent; 100 points = $5 credit. Gold tier (500+ points per 6 months) unlocks priority ordering, a dedicated support line, and 0.5 bonus points per dollar. Platinum tier (1,500+ points) includes all Gold benefits plus monthly surprise gifts. Double-points every Wednesday. Free beverage on your birthday. Currently 52,000+ active members. Points expire after 12 months of inactivity.
+
+Q: How do I use the mobile app?
+A: Download the GreenLeaf app (iOS and Android) and create an account. Features include: full menu with photos and ingredients, pre-order with scheduled pickup, real-time order tracking, loyalty rewards management, and in-app support chat (8 AM–8 PM daily). If you experience issues, update to v3.0.3+, clear app cache, or email apphelp@greenleafbistro.com. Biometric login is supported on iOS 16+ and Android 10+.
+
+Q: What is your approach to sustainability?
+A: 73% of our fresh produce is locally sourced within 100 miles. All packaging is compostable or recyclable; we eliminated single-use plastics in 2023. We donate unsold food daily via SecondHarvest Metro — 47,000 meals donated in 2025. All cafés run on 100% renewable energy. 10-cent discount for customers who bring a reusable cup. Our 2026 goals: 85% local sourcing and zero food waste at 4 pilot locations.
+
+Q: How do you train your staff?
+A: All new staff complete a two-week onboarding program covering food safety (ServSafe), allergen awareness, customer service standards, and our digital ordering systems. Quarterly refresher training is mandatory. Monthly "Customer First" workshops focus on complaint handling and de-escalation. District managers conduct unannounced quality audits twice per quarter. We invest approximately $1,200 per employee per year in training — above the industry average of $740. Average staff tenure is 2.8 years vs. the 1.1-year QSR industry average.
+
+Q: What channels can I use to submit feedback?
+A: Five channels: mobile app survey (embedded in order completion, under 60 seconds), web survey at survey.greenleafbistro.com, in-store kiosk QR codes, quarterly email NPS surveys for loyalty members, and Google/Yelp (monitored and responded to within 48 hours). We receive approximately 1,200 survey responses per day across all channels. All feedback feeds into our Customer Intelligence platform (MiniSense) for real-time theme extraction and CSAT computation.
+
+Q: What is your refund and replacement policy?
+A: Incorrect items, food quality issues, or missing items are replaced or refunded immediately in-store. For app orders, tap "Issue with my order" within 2 hours for an instant loyalty wallet credit or card refund (2–5 business days). No need to return food for refunds under $20; a photo via the app suffices for larger amounts. Catering order refunds require 7 days' notice.
+
+Q: Do you offer catering or large group orders?
+A: Yes. GreenLeaf Catering handles orders of 10 or more people. Minimum order $150. Orders must be placed at least 48 hours in advance via catering.greenleafbistro.com or catering@greenleafbistro.com. Our most popular packages: Corporate Bowl Bar ($18/person, min 10) and Brunch Spread ($22/person, min 15). Compostable serving ware included for orders over $500. Available within 25 km of any location.
+
+Q: What are your prices and are there value options?
+A: Main dishes: $9–$17. Specialty coffees: $4.50–$7.50. Smoothies: $6–$11. A daily special under $12 is available until supplies last. The 4.5% price adjustment implemented in April 2026 reflected increased ingredient and labour costs. We are introducing an "Everyday Value" menu in July 2026 with 8 items permanently priced under $10. Student and senior discounts of 10% with valid ID. Daily $8 lunch bundle (main + drink + side) from 11 AM to 2 PM. Loyalty members receive 5% off on their third consecutive purchase in a calendar week.
+
+Q: How do you handle food safety and hygiene?
+A: All locations maintain an A health rating or equivalent. Food safety is managed under a HACCP framework: temperature logs every 2 hours, prep surfaces sanitised hourly during service, and hand-washing compliance monitored by shift managers. Voluntary quarterly deep-cleans are performed beyond standard daily cleaning. Any food safety concern is treated as a Tier 2 complaint, reported to our food safety officer within 24 hours, and logged in our Food Safety Incident Register.
+
+Q: What are your prices for popular items?
+A: Avocado Toast $13.50, Garden Bowl $15.00, Cold Brew (original) $5.50, Cold Brew (specialty) $6.50, Turmeric Latte $6.00, Matcha Chia Pudding $9.00, Mango Chili Wrap $14.00, Smoothie of the Day $8.50. Add-ons: extra protein $2–$3, sourdough upgrade $1.50. All prices include tax at California locations.
+
+Q: What payment methods do you accept?
+A: All major credit/debit cards (Visa, Mastercard, Amex, Discover), Apple Pay, Google Pay, Samsung Pay, and GreenLeaf Wallet. Four cashless-only locations: Market Street, University Blvd, Airport Terminal B, and Westside Mall. All others accept cash. GreenLeaf Wallet payments earn an extra 0.5 loyalty points per dollar. Contactless payment available at all counters and kiosks.
+
+Q: Do you offer Wi-Fi and workspace facilities?
+A: Free high-speed Wi-Fi (100 Mbps) at all locations. Market Street, Westside, and Eastside locations have dedicated quiet work zones with power outlets at every seat and standing desk options. No minimum spend for working from our cafés, but during peak hours (12–2 PM) guests using workspace tables for more than 4 hours should spend at least $8. Our Market Street flagship (120 seats) has a private meeting room bookable via the app in 2-hour slots.
+
+Q: How do you handle food allergies for children?
+A: All kids' menu items clearly display all 14 major allergens. For children with severe allergies, speak directly with the shift manager who will personally supervise preparation. Our allergen contact card is completed by staff for each custom children's order. We provide peanut-free preparation protocols on request. Children under 12 receive a 10% automatic discount when accompanying an adult.
+
+Q: What is your social media presence?
+A: Follow us on Instagram (@greenleafbistro, 210,000 followers), Twitter/X (@greenleafbistro), TikTok (@greenleafbistro), and Facebook (GreenLeaf Bistro Official). We post daily updates on specials, kitchen content, and sustainability. We respond to DMs and comments within 24 hours. Press inquiries: press@greenleafbistro.com. Partnership/influencer: partnerships@greenleafbistro.com.
+
+Q: What accessibility features are available?
+A: All 12 locations are wheelchair accessible — step-free entry, wide aisles, accessible restrooms, and lowered counter sections. Menus are available in large print and digital accessible format (screen-reader compatible). Staff are trained in basic sign language greetings. Hearing loops at Market Street and Airport locations. Service animals welcome everywhere. Specific accessibility needs: email access@greenleafbistro.com.
+
+Q: How do you source your ingredients?
+A: We work with 34 local farms and producers within 100 miles for fresh produce, dairy, and eggs. Produce follows seasonal availability. Protein sources (tofu, legumes, tempeh) are from certified organic regional suppliers. Grains and dried goods are from domestic non-GMO certified suppliers. No artificial flavours, colours, or preservatives in core menu items. Full supplier list at greenleafbistro.com/sourcing. Two suppliers removed in Q1 2026 after failing environmental standards review.
+
+Q: What community events do you host?
+A: GreenLeaf Community hosts weekly events: Monday Mindfulness Breakfasts, Wednesday Nutritionist Talks, and Friday Artisan Markets. We sponsor two community gardens and host quarterly Dine & Donate days where 10% of daily revenue goes to a rotating local charity (selected by customer vote). In 2025 we donated over $82,000 to local causes. Corporate team bookings: email community@greenleafbistro.com.
+
+Q: How do I contact GreenLeaf Bistro for support?
+A: In-app chat (8 AM–8 PM daily, live), email support@greenleafbistro.com (24-hour response), app support at apphelp@greenleafbistro.com (4-hour response), phone 1-800-GREENLEAF (Mon–Fri 9 AM–6 PM), Twitter DM @greenleafbistro (2-hour response during business hours). Food safety emergencies: foodsafety@greenleafbistro.com (24/7). Full contact directory at greenleafbistro.com/contact.
+
+Q: What is your privacy policy regarding customer data?
+A: We collect order history, loyalty activity, location preference, and survey feedback to personalise experience and improve operations. We never sell personal data. Data is stored on AWS with AES-256 encryption. You can download or delete your data via app Settings > Privacy. We are CCPA compliant. Our analytics platform processes only anonymised, aggregated data. Loyalty data is retained for 3 years post-account closure. Full policy at greenleafbistro.com/privacy.
+
+Q: How does GreenLeaf handle supply chain disruptions?
+A: We maintain a 3-tier resilience model: primary local supplier network, approved regional backup suppliers, and a national distributor fallback. When a disruption occurs, backup tier is activated within 24 hours. Affected menu items are marked unavailable on the app within 30 minutes. In Q2 2026, an avocado and quinoa disruption (April 14–May 5) affected 7 locations; we communicated proactively via app notification and in-store signage. Disruptions affecting more than 25% of locations for more than 3 days are publicly disclosed on our website.
+
+Q: What is your catering and corporate account programme?
+A: Corporate accounts are available for businesses ordering 4+ times per year. Benefits: consolidated monthly invoicing, a dedicated account manager, 5% discount on all orders, priority scheduling, and custom corporate menu options. Orders over $1,000 qualify for net-30 payment terms. 210 active corporate accounts. Apply by emailing corporate@greenleafbistro.com. Approval in 3 business days.
+
+Q: How do you measure and improve food quality?
+A: Our three-part QA framework: (1) Supply QA — every delivery inspected against quality spec sheets; (2) Prep QA — recipe cards with exact weights and temperatures; spot-plate checks every 2 hours; (3) Customer feedback loop — food quality ratings feed into a weekly review; locations below 60% food quality CSAT for two consecutive weeks trigger an in-person audit. In Q1 2026, food quality CSAT was 75.2%, our highest-rated theme.
+
+Q: What app features are available for pre-ordering?
+A: Order up to 72 hours in advance with scheduled pickup time, save dietary preference filters, 1-tap reorder of favourites, group ordering (invite friends to a shared cart), real-time order status from "Received" through "In Prep" to "Ready", contactless QR-code pickup, and per-item special instructions (up to 200 characters). The v3.1 release in June 2026 includes Apple Watch support and a redesigned status tracking screen.
+
+Q: What measures are in place during illness outbreaks?
+A: Our Public Health Response Policy includes mandatory daily symptom check-ins for staff, sick pay ensuring staff are not penalised for staying home, enhanced sanitation protocols (hourly vs standard 2-hourly), contactless service options, and temporary seating reduction. We work with a certified occupational health consultant. COVID-era protocols can be reactivated within 24 hours if needed. Food safety always takes priority over throughput.
+
+Q: How do I join the GreenLeaf team?
+A: Current openings at greenleafbistro.com/careers. We value food handler certifications, prior QSR experience, and a passion for sustainability. Starting wages: $16/hour for entry-level (above local minimum). Benefits: flexible scheduling, free staff meals during shifts, 40% off outside shifts, free uniform, and employee wellness programme. Clear progression: Team Member → Senior Team Member → Shift Supervisor → Assistant Manager → Store Manager. Paid 12–16 week management training programme available.
+
+Q: What is your noise and environment policy?
+A: In-store music is curated at 65–70 dB to enable conversation without raised voices. Acoustic panels are installed at larger locations. Dedicated children's areas at family-friendly locations. No unsupervised large group gatherings without advance booking. Workspace tables during peak hours (12–2 PM) require minimum $8 spend for 4+ hour stays. All locations are non-smoking and vaping-free within 15 feet of any entrance.
+
+Q: How do I report a concern about GreenLeaf's practices?
+A: Customers: submit via Feedback Portal at greenleafbistro.com/feedback. Employees: use our anonymous Ethics Hotline at 1-888-GL-ETHICS (third-party operated). Suppliers: email procurement@greenleafbistro.com. We acknowledge all reports within 24 hours and provide a resolution update within 7 business days. The Board reviews quarterly ethics reports. We do not tolerate retaliation against good-faith reporters.
+
+Q: Do you offer gift cards?
+A: Yes. GreenLeaf gift cards are available in physical form at any location or digitally via our website and app in denominations from $10 to $200. Digital gift cards are delivered instantly to email and can be added to Apple Wallet or Google Wallet. Gift cards do not expire and cannot be exchanged for cash. They can be used toward any purchase including catering orders. Custom corporate gift card orders (bulk, branded) are available for orders of 50+ cards; contact corporate@greenleafbistro.com.
+
+Q: What is your delivery or takeout policy?
+A: We offer takeout at all locations. Delivery is available through our app (select locations only) and via DoorDash, Uber Eats, and Grubhub. App-based delivery carries no additional markup; third-party platforms add their standard service fees. Minimum delivery order: $15 via our app, $20 via third-party platforms. Estimated delivery time is 25–40 minutes depending on distance and time of day. We recommend our app for best pricing and real-time tracking. Delivery is currently available within a 5 km radius of each location.
+
+Q: How do you handle out-of-stock menu items?
+A: Items unavailable due to supply constraints are marked in real time on our app and kiosks within 30 minutes of our kitchen team's notification. For pre-orders, if an item becomes unavailable between ordering and pickup, we notify you via push notification and offer a full refund or a suggested alternative at the same price. We never substitute items without customer consent. Seasonal items are available while supplies last and are removed from the menu when exhausted.
+
+Q: What is your approach to menu innovation?
+A: Our culinary team reviews and refreshes the menu quarterly, with new seasonal specials introduced monthly. Customer feedback themes are a primary input for menu development — if a theme like "more protein options" appears consistently in our survey data, it feeds directly into the next quarter's development cycle. We pilot new items at 2–3 locations before rolling out chain-wide. Staff are trained on new items 48 hours before launch. Community feedback via social media is tracked by our culinary team.
+
+Q: Do you offer corporate wellness programmes?
+A: Yes. GreenLeaf Corporate Wellness offers discounted recurring lunch programmes, nutrition talks, and customised healthy eating plans for office teams. Monthly corporate wellness packages start at $450 per month for teams of 10 or more. Includes bi-monthly in-person nutrition workshops, weekly healthy meal deliveries or on-site service (selected locations), and access to our registered dietitian for a monthly Q&A session. Contact wellness@greenleafbistro.com for details.
+
+Q: What is your policy on allergen cross-contamination?
+A: We use colour-coded cutting boards, utensils, and preparation zones to minimise cross-contamination. However, our kitchen is not a certified allergen-free facility — shared equipment is used, and trace allergens may be present in any dish. Guests with severe (anaphylactic) allergies should inform the shift manager before ordering and exercise personal judgment. We can prepare allergen-sensitive orders in a dedicated station at 8 of our 12 locations with advance notice. We do not guarantee zero cross-contamination for any item.
+
+Q: How do I reset my GreenLeaf app password?
+A: Tap "Forgot Password" on the login screen. Enter your registered email address and check for a reset link (valid for 30 minutes). If the email does not arrive within 5 minutes, check your spam folder or contact apphelp@greenleafbistro.com. For locked accounts (5 failed login attempts), you must use the reset flow; accounts auto-unlock after 30 minutes or immediately upon password reset. We do not support phone number-based login at this time but plan to add it in v3.2.
+
+Q: What is the GreenLeaf app's group ordering feature?
+A: Group ordering lets one person start a shared cart and invite up to 9 others via link or QR code. Each participant adds their own items with their own dietary notes. The cart owner reviews and pays for the entire order. Participants see the real-time cart as items are added. Group orders qualify for all loyalty point accrual. Group orders must be placed at least 20 minutes before desired pickup to allow prep time. The group ordering feature is available on iOS and Android; web group ordering is coming in Q3 2026.
+
+Q: What is the GreenLeaf app's order tracking feature?
+A: Once you place a pre-order or mobile order, the app shows a live status screen with four stages: Order Received (confirmed and queued), In Preparation (kitchen started), Ready for Pickup (notification sent), and Picked Up (order closed). Each transition triggers a push notification. The preparation timer counts down from when your order enters the "In Prep" stage. If your order is not ready within the promised time, the app offers a button to notify the counter. Average time from "In Prep" to "Ready" is 6 minutes during off-peak hours and 11 minutes during peak hours.
+
+Q: Do you offer any subscription or meal plan services?
+A: Yes. Our GreenLeaf Daily subscription offers: a pre-chosen meal (you select a weekly preference category such as "high protein," "plant-based," or "chef's choice") delivered to your office or picked up at a set time, Monday through Friday. Pricing: $11/day ($55/week billed weekly) or $10/day ($200/month billed monthly). The subscription includes a loyalty point bonus of 2x points per meal. Subscriptions can be paused for up to 2 weeks per month without penalty. Available at Market Street, Westside, Eastside, and University Blvd locations. Sign up at greenleafbistro.com/daily.
+
+Q: How do you handle a long queue at the counter?
+A: Our shift supervisors are trained to open additional service points when queue length exceeds 6 customers or estimated wait time exceeds 12 minutes. Our operations dashboard monitors queue length in real time via our counter tablet system and alerts the shift supervisor automatically. If you are in a long queue, scanning the QR code on the wait board lets you pre-order via the app and receive a notification when your order is ready — you can then step away and return. We target a maximum in-person wait of 15 minutes even during peak hours.
+
+Q: What happens if I accidentally place a duplicate order?
+A: Contact us immediately via in-app chat or phone the location directly. If your duplicate order has not yet entered preparation, we can cancel and refund it within minutes. Once in preparation, we can only offer a loyalty wallet credit for the duplicate (not a card refund). To prevent accidental duplicates, our app shows a confirmation screen with a 5-second wait before finalising any order. For recurring accidental duplicates (e.g., due to slow network), updating the app to the latest version typically resolves the issue.
+
+Q: What is your catering cancellation policy?
+A: Catering orders cancelled more than 48 hours before the scheduled delivery/pickup receive a full refund. Cancellations 24–48 hours in advance receive a 50% refund or a full credit to your GreenLeaf Wallet. Cancellations under 24 hours are non-refundable. For force majeure situations (severe weather, public health emergency), we evaluate case-by-case and aim to offer credit if possible. All catering cancellations must be submitted via the catering portal or by emailing catering@greenleafbistro.com with your order reference number.
+
+Q: Do you provide nutritional information for menu items?
+A: Yes. Full nutritional information (calories, macros, allergens, ingredients) for every menu item is available on our website, in the app (tap any item > "Nutritional Info"), and in printed guides available at every counter. Our registered dietitian reviews nutritional data quarterly to account for recipe changes. Our app also supports a personal nutrition tracking view where you can see your cumulative macro intake across all GreenLeaf orders for the current week. We do not provide per-serving nutritional info for custom modifications as these vary by preparation.
+
+Q: What is your complaint escalation timeline?
+A: Tier 1 (front-line resolution): immediate, handled by any team member. Tier 2 (shift manager): within 15 minutes for in-person complaints; within 4 hours for digital submissions. Tier 3 (regional operations manager): triggered when (a) the same issue appears at 3+ complaints per location per week, (b) a complaint involves a safety concern, or (c) the customer specifically requests escalation. Tier 4 (executive team): for legal, media, or reputational complaints. Target resolution at each tier: Tier 1 < 5 min, Tier 2 < 2 hours, Tier 3 < 48 hours, Tier 4 < 72 hours.
+
+Q: What are your busiest times and how do you manage them?
+A: Peak periods by day: 8–9 AM (morning rush), 12–1:30 PM (lunch), 5:30–7:30 PM (evening). Highest volume locations: Market Street (weekday lunch) and University Blvd (10 AM–2 PM during academic term). We schedule 20–25% additional staffing during known peak windows. Our operations platform forecasts demand using rolling 4-week historical data and adjusts staffing recommendations weekly. During unexpected surges, our Shift Surge Protocol allows shift supervisors to call in on-call part-time staff with a 45-minute activation window. We also activate queue management screens and push notifications to mobile pre-order during surges.
+
+Q: Do you have a student or group discount policy?
+A: 10% student discount with valid student ID, applicable at all locations. Group discounts for 6+ people dining together: 5% off total bill (in-store only, not applicable to app or delivery orders). School and university group catering (15+ students): contact catering@greenleafbistro.com for customised pricing — we offer up to 20% off for educational institutions. We do not combine group and student discounts. Loyalty points still accrue at the discounted price. Proof of group size may be requested for in-store group discounts.
+
+Q: How do you handle special occasions and celebrations?
+A: We welcome birthday celebrations, team events, and milestone parties. For groups of 8 or more celebrating an occasion, we recommend booking the private meeting room (Market Street) or reserving a section at Eastside or Westside (advance notice of 24+ hours required, via app or phone). We offer a complimentary dessert for birthday celebrations when pre-arranged. Custom cake orders from our partner bakery can be arranged through catering@greenleafbistro.com with 72 hours' notice. We do not currently allow external food or cakes to be brought in unless pre-arranged via catering.
+
+Q: What is your employee benefits package?
+A: Full-time employees receive: health insurance contribution (50% of premium), dental and vision coverage, paid time off (10 days year 1, scaling to 20 days by year 5), parental leave (6 weeks fully paid, 6 weeks at 60%), employee assistance programme (free counselling sessions), and access to our GreenLeaf Wellness account ($500/year for gym, meditation, or nutrition services). Part-time employees receive: pro-rata PTO, access to the wellness account, and all the same food discounts and shift flexibility as full-time staff. Benefits are reviewed annually.
+
+Q: What sustainability certifications does GreenLeaf hold?
+A: We hold: B Corporation certification (since 2022), LEED Silver certification for our Market Street and Westside locations, Rainforest Alliance certification for all coffee sourcing, and a Zero Waste certification for 2 of our 12 locations (target: all 12 by 2027). Our cold brew coffee uses 100% certified organic, fair-trade beans. All seafood (in our occasional seasonal specials) is sourced from MSC-certified suppliers. We publish an annual sustainability impact report at greenleafbistro.com/sustainability-report.
+
+Q: Do you have a printed menu?
+A: Printed menus are available at every location and are updated every quarter or whenever items are added or removed. We also maintain a large-format printed menu board at the counter, updated weekly. For customers with visual impairments, a large-print menu is available upon request, and our staff are happy to read through options. The most current menu is always the digital version on our app and website — printed menus may occasionally lag by a few days during seasonal transitions.
+
+Q: How do you handle order modifications and customisations?
+A: Most menu items can be customised: add or remove ingredients, swap proteins or grains, adjust dressing quantities, or request items on the side. Modifications are noted in our kitchen display system and confirmed on your receipt. For pre-orders placed via the app, you can add custom instructions per item (up to 200 characters). Complex modifications (e.g., entirely different ingredients) may incur a $1–$2 modification fee depending on the substitution. We cannot guarantee that all modifications are possible during peak service due to kitchen workflow constraints.
+
+Q: How do I access my order history in the app?
+A: Tap the "Orders" tab in the bottom navigation of the GreenLeaf app. Your full order history is listed chronologically, with item details, prices, loyalty points earned, and timestamps. You can reorder any past order with one tap. To get a receipt for a past order, tap the order and select "Email Receipt" — it will be sent to your registered email within 2 minutes. Order history is retained in the app for 24 months. For older records, email support@greenleafbistro.com with your account email and the approximate date of the order.
+
+Q: What is the GreenLeaf Wallet and how do I top it up?
+A: GreenLeaf Wallet is a prepaid digital balance stored in the app, usable for any GreenLeaf purchase. Benefits: instant payment (no card entry), extra 0.5 points per dollar earned, and priority processing for orders paid via Wallet. To top up: go to app > Wallet > Add Funds, then enter the amount ($10–$200) and select your payment method (card, Apple Pay, or Google Pay). Top-ups process instantly. Wallet balance is non-refundable to your original payment method but can be transferred to a different GreenLeaf account or used for catering orders. Auto-top-up option available: set a threshold and auto-refill amount.
+
+Q: Do you participate in third-party food delivery platforms?
+A: Yes. GreenLeaf Bistro is available on DoorDash, Uber Eats, and Grubhub at all 12 locations. Third-party platforms add their standard delivery and service fees (typically 15–30% above our in-house menu prices). For the best price and real-time tracking, we recommend ordering directly via our app or website. All third-party orders are prepared to the same quality standards as in-store orders. We do not offer loyalty points for orders placed via third-party platforms — points are only earned through our app or web ordering.
+
+Q: How do I cancel an app order?
+A: You can cancel an order via the app within 2 minutes of placing it, before it enters "In Preparation" status. Tap your active order and select "Cancel Order." A full refund is issued immediately to your GreenLeaf Wallet or within 2–5 business days to your original payment method. Once an order enters preparation, it cannot be cancelled but you may request a replacement or refund for quality issues upon pickup. For orders placed more than 20 minutes in advance, cancellation is available up until 10 minutes before the scheduled pickup time.
+
+Q: What are the rules for the GreenLeaf Rewards programme?
+A: Points accrue at 1 per $1 spent (1.5 per $1 via GreenLeaf Wallet, 2x on subscription meals). Points are credited within 24 hours of purchase. 100 points = $5 credit. Points expire after 12 months of account inactivity. Double-points Wednesdays are applied automatically. Rewards are non-transferable between accounts. Points are not awarded on tips, gift card purchases, or catering deposits. If you forget to log in before purchasing, you can claim points retroactively by emailing rewards@greenleafbistro.com with your receipt within 7 days of purchase.
+
+Q: How do I update my dietary preferences in the app?
+A: Go to app > Profile > Dietary Preferences. You can mark allergens, dietary restrictions, and food preferences. Once set, the app automatically filters the menu to highlight safe options and flags items containing your restricted ingredients. Your preferences are saved and persist across sessions. The app will display a prominent warning if a new item added to a favourites order conflicts with your dietary settings. Dietary preferences are also shared with our kitchen display system when you place a pre-order, as a reference for our team.
+
+Q: What is your approach to reducing food waste?
+A: We implement a FIFO (first in, first out) inventory system to minimise food waste from expiry. End-of-day surplus food is donated to SecondHarvest Metro via our daily pickup arrangement. Items near their freshness window are offered at a 20% discount in the app's "Today's Value" section after 7 PM. Staff meals are also provided using food that cannot be sold. We are piloting a zero-waste composting programme at 4 locations, where all organic waste is composted locally rather than sent to landfill. In 2025, we reduced food waste by 31% compared to 2023 levels.
+
+Q: How does GreenLeaf handle water usage and conservation?
+A: We have installed low-flow faucets and dishwashers at all locations, reducing water usage by 22% since 2021. Ice machines are scheduled to minimise waste. Landscaping at our locations with outdoor areas uses drought-resistant plants with drip irrigation. We track water usage monthly by location and report it in our annual sustainability report. Two locations (Riverside and Northgate) have achieved a 40% reduction in water use relative to baseline through targeted equipment upgrades.
+
+Q: Do you offer a kids' menu?
+A: Yes, at all family-friendly locations (8 of 12). Kids' menu items are designed for under-12s: smaller portions, no added sugars, no artificial flavours. Current kids' options include: Mini Garden Bowl ($7), Sourdough Toast with Avocado ($6), Banana Oat Smoothie ($5.50), Seasonal Fruit Cup ($4). All kids' items clearly display all 14 allergens. Free water with every kids' meal. Kids under 12 receive a 10% discount and parents can earn loyalty points on kids' meal purchases.
+
+Q: What is your approach to portion sizes?
+A: We standardise portion sizes using recipe cards with exact weight specifications. This ensures consistency across locations and shifts. Portion sizes are set to be satisfying without being excessive — aligned with our wellness mission. If you find your portion too small, speak to a team member; we are happy to discuss options. For larger appetites, all bowls and wraps offer a large-size upgrade for $2–$3. Our nutrition guide reflects standard portion sizes; custom modifications may affect calorie counts.
+
+Q: How do I provide anonymous feedback?
+A: All feedback submitted via our app survey, web survey, and kiosk QR code is treated as anonymous by default unless you choose to provide your contact details. Feedback submitted through the anonymous mode does not link to your loyalty account or order history. We only use anonymised, aggregate data for internal analysis. You may still receive a follow-up from our team if you submit a complaint with contact details and request a response. To ensure full anonymity, use the kiosk or web survey without logging in.
+
+Q: What is the "Ask GreenLeaf" AI feature?
+A: Ask GreenLeaf is our AI-powered business intelligence assistant available to authorised internal users and franchise managers. It answers business questions about customer feedback trends, CSAT scores, complaint themes, and period-over-period comparisons using a multi-agent AI system. The system uses a DataAgent for computing exact survey metrics, a RAGAgent for retrieving relevant policy context, a ComparisonAgent for identifying trends over time, and a SummaryAgent for generating business-language narratives. All outputs include data provenance and are grounded in actual survey data — no hallucinated metrics. Accessible via the MiniSense platform dashboard.
+
+Q: How does the MiniSense survey analysis platform work?
+A: MiniSense is GreenLeaf's internal customer intelligence platform. It ingests all survey responses from our five feedback channels in real time. A multi-agent AI pipeline classifies each response by theme (food quality, wait time, staff, cleanliness, pricing, app experience), computes CSAT and average ratings by location and period, and identifies emerging complaint trends. The platform powers our internal dashboards, complaint escalation routing, and the weekly CSAT reports shared with team leads. The AI Analyst feature allows managers to ask natural language questions about customer feedback and receive grounded, narrative answers with full data provenance.
+
+Q: How often is survey data refreshed in the MiniSense platform?
+A: Survey responses are ingested continuously as they arrive — the platform processes new submissions within 60 seconds of receipt. CSAT scores and theme distributions are recomputed in near-real time. Dashboard metrics (displayed to managers) are refreshed every 5 minutes to balance performance with currency. Historical trend charts use pre-computed monthly aggregates updated at midnight. The AI Analyst feature queries the live dataset at time of question submission, so answers always reflect the most current data.
+
+Q: What is GreenLeaf's policy on social media reviews?
+A: We monitor all public reviews on Google, Yelp, TripAdvisor, and Facebook daily. Our social media team responds to all reviews within 48 hours — both positive and negative. For negative reviews, we aim to understand the issue and invite the customer to resolve it via private message. We never ask customers to remove or change negative reviews. We do not incentivise positive reviews in any way. Review scores are tracked as a key metric alongside our internal survey CSAT — external review scores and internal survey CSAT are expected to correlate within 10 percentage points.
+
+Q: What is GreenLeaf's employee satisfaction score?
+A: We conduct bi-annual employee satisfaction surveys. Our most recent eNPS (Employee Net Promoter Score) is 42, above the retail/food service industry average of 28. Key satisfaction drivers: flexible scheduling, free meals, team culture, and the management training pathway. Key areas for improvement: shift allocation predictability and communication from district managers to frontline staff. We are implementing a new shift scheduling platform in Q3 2026 to address predictability concerns. Employee satisfaction results are shared with all staff and action plans are communicated within 30 days of each survey.
+
+Q: How does GreenLeaf ensure consistency across its 12 locations?
+A: Consistency is maintained through: standardised recipe cards (weight-specific), a mandatory quality audit programme (twice per quarter per location by district managers), the same digital ordering platform and kitchen display system at all locations, mandatory refresher training for all staff every quarter, and centralised procurement (all locations source from the same approved supplier list). Each location submits a weekly operations report covering CSAT, complaint volume, food waste, and wait time metrics. Locations deviating from standards by more than 10% trigger a corrective action review within 2 weeks.
+
+Q: Does GreenLeaf offer franchise opportunities?
+A: We are not currently offering new franchise opportunities. Our 12 locations are all company-owned and operated. We may consider a franchise model in future expansion markets. Interested parties can express interest by emailing expansion@greenleafbistro.com. We do offer a licensing arrangement for corporate cafeteria operators who want to serve GreenLeaf-branded menu items under a licensed agreement — contact licensing@greenleafbistro.com for details. Any licensing arrangement requires full compliance with our operational and quality standards, verified by quarterly audits.
+
+Q: What is the GreenLeaf food photography and social media policy?
+A: Customers are welcome and encouraged to photograph their food and share on social media. Tagging @greenleafbistro may result in a feature on our official Instagram (we reach out for permission before reposting). Staff are instructed not to photograph customers without consent. For content creator or influencer visits, please arrange in advance via partnerships@greenleafbistro.com so we can ensure the best experience and provide media kits. Commercial photography (for editorial or advertising use) requires written permission from our marketing team at marketing@greenleafbistro.com.
+
+Q: What is your stance on food dyes and artificial ingredients?
+A: We do not use any artificial colours, artificial flavours, or artificial preservatives in our core menu items. Matcha powder, turmeric, beet powder, and berry purees are used as natural colour sources in beverages and bowls. We use unbleached flours, raw cane sugar, and cold-pressed oils. Our complete ingredient list for every item is available in the app and on our website. We periodically update this list as recipes evolve — any change to core ingredients triggers an update to the app within 48 hours and is communicated via social media for key items.
+
+Q: How do I report a food safety concern after visiting?
+A: If you experience food-related illness or have a serious food safety concern following a visit, contact our food safety team immediately at foodsafety@greenleafbistro.com (monitored 24/7) or call 1-800-GREENLEAF and request a food safety escalation. Provide the date, time, location, and the items consumed. Our food safety officer will open an investigation within 2 hours of receiving the report. We take all such reports extremely seriously and will share our investigation findings with you. Confirmed incidents are reported to local health authorities as required by law. We cooperate fully with all health department inspections.
+
+Q: What is the maximum group size for a single reservation?
+A: For in-café dining, we can accommodate groups of up to 40 people at Market Street (with advance booking of 48+ hours) and up to 25 at Eastside and Westside. For groups exceeding these sizes, we recommend our catering service which can serve larger groups at external venues or as a corporate lunch delivery. Reservations for groups of 8+ can be made via the app, by phone, or by emailing reservations@greenleafbistro.com. For groups of 15+, a $5 per-person deposit is required at booking to hold the space, credited toward your total bill.
+
+Q: How do I redeem a GreenLeaf gift card?
+A: Physical gift cards can be redeemed at any in-store counter or kiosk by presenting the card to staff or scanning the barcode on the kiosk. Digital gift cards can be added to the GreenLeaf Wallet in the app (Wallet > Add Gift Card > Enter Code). Once added to the Wallet, the balance is applied automatically at checkout. Multiple gift cards can be added and combined. Gift card balances can be checked at any counter, on the website, or in the app. Lost or stolen gift cards can be replaced once if you have the original receipt or the email confirmation of the digital gift card.
+
+Q: What is your policy on bringing outside food or drinks?
+A: We ask that customers do not bring outside food or drinks to consume at GreenLeaf Bistro locations out of respect for our kitchen team and other guests. Exceptions: medically necessary food or drink (e.g., diabetic snacks, infant formula) and licensed medications. Refillable water bottles may be filled at our water stations free of charge. Customers purchasing from GreenLeaf are welcome to bring their own reusable cup for a 10-cent discount. External wedding or birthday cakes may only be brought in if pre-arranged through our events team (catering@greenleafbistro.com) and a small cake service fee applies.
+
+Q: How are app push notifications managed?
+A: You can customise push notifications in app > Settings > Notifications. Available notification types: order status updates (recommended on), loyalty point milestones, weekly specials and new menu items, promotional offers, and community event reminders. You can toggle each category independently. We do not send more than 3 promotional notifications per week. Order status notifications are always sent regardless of general notification preferences as they are transactional. If you opt out of all notifications, you can still check order status manually in the app's Orders tab.
+
+Q: What measures are in place to prevent card fraud?
+A: All payments via our app and website are processed through Stripe, a PCI-DSS Level 1 certified payment processor. We do not store your card details on our servers. CVV numbers are never stored. Transactions are protected by 3D Secure (Verified by Visa / Mastercard Identity Check) where enabled by your bank. If you notice an unauthorised charge from GreenLeaf, contact your bank and email payments@greenleafbistro.com immediately. We will investigate and provide documentation for your bank's chargeback process. Two-factor authentication is available for your GreenLeaf account in app > Settings > Security.
+
+Q: Do you have any items that change seasonally?
+A: Yes. Our seasonal specials rotate monthly and are designed around locally available fresh produce. Typical rotation: spring (strawberry, asparagus, pea-based items), summer (mango, corn, stone fruit), autumn (pumpkin, apple, roasted root vegetables), winter (citrus, warming spices, hearty grains). Seasonal items are introduced on the first Monday of the month and removed at end of month or when supply is exhausted. Seasonal menus are announced 2 weeks in advance via our app, social media, and email newsletter. Loyalty members get a 48-hour early preview of seasonal specials before public launch.
+
+Q: What is the GreenLeaf Bistro email newsletter?
+A: The GreenLeaf newsletter is sent to loyalty members twice per month. Content includes: seasonal menu previews, sustainability updates, nutritionist tips, community event schedules, and exclusive loyalty member promotions. You can manage your email preferences in app > Profile > Communications Preferences. We do not share your email with third-party marketers. Average open rate: 42% (well above the food industry average of 22%). To subscribe without a loyalty account, sign up at greenleafbistro.com/newsletter. To unsubscribe, click the unsubscribe link at the bottom of any email or toggle off email notifications in the app.
+
+Q: What is your position on GMO ingredients?
+A: We source non-GMO ingredients for our entire menu. All grain suppliers (quinoa, oats, lentils, flour) are required to provide non-GMO certifications as part of our supplier onboarding process. We conduct annual supplier audits to verify ongoing compliance. Our full non-GMO ingredient sourcing policy is outlined in our Supplier Standards document, available on request. In cases where a certified non-GMO alternative is temporarily unavailable due to supply disruption, we disclose this in our app and on in-store signage.
+
+Q: How does GreenLeaf support local farmers?
+A: We work with 34 local farms within a 100-mile radius. We pay above-market rates for local produce in recognition of the lower volume and higher traceability. We offer 90-day fixed-price contracts to give farmers revenue predictability. Our procurement team visits each farm partner at least once per year. We fund 2 community gardens (Riverside Elementary and Downtown Community Centre) and donate seeds, soil, and staff volunteer time. Our Seasonal Sourcing Map, published at greenleafbistro.com/sourcing, shows every active farm partner with a brief profile and distance from our flagship location.

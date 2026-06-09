@@ -1,0 +1,43 @@
+# About Jayant Verma
+
+## Personal Summary
+[Fill in: 2-3 sentences about yourself]
+
+## Current Role / Status
+[Fill in: e.g., "Final year B.Tech student at XYZ University" or "Software Engineer at ABC"]
+
+## Education
+[Fill in: Degree, University, Year, CGPA/Grade if relevant]
+
+## Technical Skills
+[Fill in: Languages, frameworks, tools you're comfortable with]
+Example:
+- Languages: Python, TypeScript, JavaScript, SQL
+- AI/ML: LLMs, RAG pipelines, fine-tuning, embeddings, FAISS
+- Frameworks: FastAPI, React, Next.js
+- Tools: Git, Docker, PostgreSQL
+
+## Projects
+[Fill in each project:]
+
+### MiniSense (this project)
+- Multi-agent AI platform for survey analysis
+- Tech: FastAPI, React, TypeScript, Groq LLM, FAISS, cross-encoder reranking
+- Features: Real-time SSE agent tracing, live agent graph, RAG with reranking, evaluation lab
+
+### [Other Project Name]
+- Description
+- Tech stack
+- Impact/results
+
+## Work Experience
+[Fill in: Company, Role, Duration, Key contributions]
+
+## What I'm Looking For
+[Fill in: e.g., "Actively looking for AI/ML engineering roles" or "Open to internships in LLM/agent systems"]
+
+## Interests
+[Fill in: e.g., AI agents, LLM applications, distributed systems, etc.]
+
+## Contact
+[Fill in: LinkedIn URL, GitHub URL, email]

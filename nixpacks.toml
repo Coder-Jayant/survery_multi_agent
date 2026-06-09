@@ -1,0 +1,12 @@
+[phases.setup]
+nixPkgs = ["python313", "nodejs_20"]
+
+[phases.install]
+cmds = [
+  "pip install -r requirements.txt",
+  "npm install --prefix frontend",
+  "npm run build --prefix frontend"
+]
+
+[start]
+cmd = "python -m uvicorn api.main:app --host 0.0.0.0 --port $PORT"
