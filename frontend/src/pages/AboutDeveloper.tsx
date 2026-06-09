@@ -57,7 +57,7 @@ const PROJECTS = [
   },
   {
     title: 'MiniSense (This Project)',
-    desc: 'CTO-demo-quality multi-agent platform demonstrating agent orchestration, RAG with reranking, survey analytics, AI observability, and SSE-streamed reasoning traces.',
+    desc: 'Production-grade multi-agent platform demonstrating agent orchestration, RAG with reranking, survey analytics, AI observability, and SSE-streamed reasoning traces.',
     tags: ['Orchestrator', 'RAG', 'FAISS', 'FastAPI', 'React', 'SSE'],
     highlight: true,
   },
