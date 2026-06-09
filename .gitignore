@@ -22,8 +22,5 @@ minisense.zip
 Assignment.docx
 .DS_Store
 
-# Runtime config with API keys — never commit this
-config/config.json
-
 # survey_responses.json and rag/vector_store/ are intentionally committed
 # so Railway has them on first boot without needing a slow generation step.

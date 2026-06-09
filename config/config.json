@@ -1,0 +1,22 @@
+{
+  "provider": "openrouter",
+  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "api_keys": {
+    "groq": "",
+    "openai": "",
+    "gemini": "",
+    "anthropic": "",
+    "grok": "",
+    "openrouter": ""
+  },
+  "embedding_model": "all-MiniLM-L6-v2",
+  "retrieval": {
+    "top_k": 3,
+    "strategy": "qa_block",
+    "score_threshold": 0.1
+  },
+  "active_kb": "default",
+  "active_dataset": "survey_responses.json",
+  "temperature": 0.3,
+  "max_tokens": 512
+}
