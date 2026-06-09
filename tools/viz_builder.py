@@ -49,7 +49,7 @@ def build_visualization(
 
     # ── Keyword signals ───────────────────────────────────────────────────────
     force_pie   = any(w in q for w in ["pie", "donut"])
-    force_table = any(w in q for w in ["table", "tabulate", "list all", "show all"])
+    force_table = any(w in q for w in ["table", "tabular", "tabulate", "list all", "show all"])
     force_bar   = any(w in q for w in ["bar chart", "bar graph", "histogram"])
     wants_themes = any(w in q for w in ["theme", "complaint", "issue", "topic", "area"])
     wants_rating = any(w in q for w in ["rating", "distribution", "star", "score breakdown"])
@@ -65,7 +65,59 @@ def build_visualization(
     elif comparison_result:
         best_comp = comparison_result
 
-    # ── BRANCH 1: Comparison data available ──────────────────────────────────
+    # ── BRANCH 0: Multiple comparison results → timeline chart ───────────────
+    if all_comparison_results and len(all_comparison_results) > 1:
+        # Reconstruct ordered unique periods from all comparisons
+        seen: set = set()
+        periods = []
+        for comp in all_comparison_results:
+            for period in [comp.period_a, comp.period_b]:
+                if period.period_label not in seen:
+                    periods.append(period)
+                    seen.add(period.period_label)
+
+        if force_table:
+            rows = []
+            for p in periods:
+                rows.append({
+                    "Period": p.period_label,
+                    "CSAT": f"{p.csat_score}%",
+                    "Avg Rating": f"{p.avg_rating:.2f}/5",
+                    "Responses": f"{p.total_responses:,}",
+                })
+            return VizSpec(
+                type="table",
+                title=f"Multi-Period Comparison ({periods[0].period_label} → {periods[-1].period_label})",
+                data=rows,
+                x_key="Period",
+                y_keys=["CSAT", "Avg Rating", "Responses"],
+                colors=[],
+            )
+
+        if force_pie:
+            # Pie of CSAT across periods
+            return VizSpec(
+                type="pie",
+                title=f"CSAT Distribution Across Periods",
+                data=[{"name": p.period_label, "value": p.csat_score} for p in periods],
+                x_key="name",
+                value_key="value",
+                unit="%",
+                colors=THEME_COLORS,
+            )
+
+        # Default: bar chart of CSAT per period
+        return VizSpec(
+            type="bar",
+            title=f"CSAT Trend: {periods[0].period_label} → {periods[-1].period_label}",
+            data=[{"period": p.period_label, "csat": p.csat_score, "rating": round(p.avg_rating, 2)}
+                  for p in periods],
+            x_key="period",
+            value_key="csat",
+            unit="%",
+            colors=[THEME_COLORS[0]],
+        )
+
     if best_comp:
         a, b = best_comp.period_a, best_comp.period_b
 
@@ -132,27 +184,30 @@ def build_visualization(
                 colors=PERIOD_COLORS,
             )
 
-        # Default comparison → grouped bar of CSAT & avg_rating
-        return VizSpec(
-            type="grouped_bar",
-            title=f"{a.period_label} vs {b.period_label}",
-            data=[
-                {
-                    "metric": "CSAT (%)",
-                    a.period_label: a.csat_score,
-                    b.period_label: b.csat_score,
-                },
-                {
-                    "metric": "Avg Rating (/5)",
-                    a.period_label: round(a.avg_rating, 2),
-                    b.period_label: round(b.avg_rating, 2),
-                },
-            ],
-            x_key="metric",
-            y_keys=[a.period_label, b.period_label],
-            unit="",
-            colors=PERIOD_COLORS,
-        )
+        # Default comparison → table with CSAT, rating, responses side by side
+        if force_table or not (wants_themes or force_pie or force_bar):
+            a, b = best_comp.period_a, best_comp.period_b
+            return VizSpec(
+                type="table",
+                title=f"{a.period_label} vs {b.period_label}",
+                data=[
+                    {"Metric": "CSAT Score",
+                     a.period_label: f"{a.csat_score}%",
+                     b.period_label: f"{b.csat_score}%",
+                     "Change": f"{best_comp.delta_csat:+.1f}pp"},
+                    {"Metric": "Avg Rating",
+                     a.period_label: f"{a.avg_rating:.2f}/5",
+                     b.period_label: f"{b.avg_rating:.2f}/5",
+                     "Change": f"{best_comp.delta_avg_rating:+.3f}"},
+                    {"Metric": "Responses",
+                     a.period_label: f"{a.total_responses:,}",
+                     b.period_label: f"{b.total_responses:,}",
+                     "Change": f"{b.total_responses - a.total_responses:+,}"},
+                ],
+                x_key="Metric",
+                y_keys=[a.period_label, b.period_label, "Change"],
+                colors=[],
+            )
 
     # ── BRANCH 2: Single-period data ──────────────────────────────────────────
     if data_result:

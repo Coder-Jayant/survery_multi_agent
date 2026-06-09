@@ -89,35 +89,48 @@ function GroupedBar({ viz }: { viz: VizSpec }) {
 }
 
 // ── Pie chart ──────────────────────────────────────────────────────────────
+const RADIAN = Math.PI / 180
+const renderPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+  if (percent < 0.04) return null
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.55
+  const x = cx + radius * Math.cos(-midAngle * RADIAN)
+  const y = cy + radius * Math.sin(-midAngle * RADIAN)
+  return (
+    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central"
+      fontSize={10} fontWeight="700">
+      {`${(percent * 100).toFixed(0)}%`}
+    </text>
+  )
+}
+
 function PieViz({ viz }: { viz: VizSpec }) {
   const colors = getColors(viz)
   const valueKey = viz.value_key ?? 'value'
   const nameKey = viz.x_key ?? 'name'
 
   return (
-    <ResponsiveContainer width="100%" height={220}>
+    <ResponsiveContainer width="100%" height={260}>
       <PieChart>
         <Pie
           data={viz.data}
           dataKey={valueKey}
           nameKey={nameKey}
           cx="50%"
-          cy="50%"
-          innerRadius={55}
-          outerRadius={85}
-          paddingAngle={3}
+          cy="46%"
+          innerRadius={60}
+          outerRadius={95}
+          paddingAngle={2}
           stroke="none"
+          labelLine={false}
+          label={renderPieLabel}
         >
           {viz.data.map((_, i) => (
             <Cell key={i} fill={colors[i % colors.length]} />
           ))}
         </Pie>
-        <Tooltip
-          content={<CustomTooltip unit={viz.unit} />}
-          formatter={(v: any) => [`${v}${viz.unit ? ' ' + viz.unit : ''}`, '']}
-        />
+        <Tooltip content={<CustomTooltip unit={viz.unit} />} />
         <Legend
-          wrapperStyle={{ fontSize: 11, color: '#8888aa' }}
+          wrapperStyle={{ fontSize: 11, color: '#8888aa', paddingTop: 4 }}
           iconType="circle"
           iconSize={8}
         />

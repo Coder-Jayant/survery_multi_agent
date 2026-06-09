@@ -1,10 +1,10 @@
 {
-  "provider": "openrouter",
-  "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+  "provider": "groq",
+  "model": "llama-3.3-70b-versatile",
   "api_keys": {
-    "groq": "",
+    "groq": "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",
     "openai": "",
-    "gemini": "",
+    "gemini": "AQ.Ab8RN6IY88QLecn78-WaRVW0D5eTKJc_1X27OOYher0KVWyGQA",
     "anthropic": "",
     "grok": "",
     "openrouter": ""
