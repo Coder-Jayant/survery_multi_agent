@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Bot, BarChart2, BookOpen,
   FlaskConical, Building2, Settings, Info, User,
-  ChevronLeft, ChevronRight, Leaf, Activity, Menu, X, Cpu
+  ChevronLeft, ChevronRight, Leaf, Activity, Menu, X, Cpu, Download
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -32,6 +32,7 @@ const NAV_SECTIONS = [
     items: [
       { path: '/about-project', label: 'About Project', icon: Info },
       { path: '/about-developer', label: 'About Developer', icon: User },
+      { path: '/download', label: 'Download Source Code', icon: Download },
     ],
   },
 ]
