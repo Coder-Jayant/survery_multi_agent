@@ -55,7 +55,7 @@ def _compute_period_kpis(period_key: str) -> dict:
     if period_key not in PERIOD_RANGES:
         period_key = "may"
     start, end, label = PERIOD_RANGES[period_key]
-    responses = list(_load_responses())
+    responses = _load_responses()
     filtered = filter_by_period(responses, start, end)
 
     csat = compute_csat(filtered)

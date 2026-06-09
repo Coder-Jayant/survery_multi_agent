@@ -41,9 +41,10 @@ def _parse_date(date_str: str) -> date:
 
 
 def filter_by_period(responses: list[dict], start: str, end: str) -> list[dict]:
-    """Filter responses to those within [start, end] inclusive (ISO date strings)."""
-    s, e = _parse_date(start), _parse_date(end)
-    return [r for r in responses if s <= _parse_date(r["date"]) <= e]
+    """Filter responses to those within [start, end] inclusive (ISO date strings).
+    Uses fast lexicographical string comparison instead of datetime parsing.
+    """
+    return [r for r in responses if start <= r["date"] <= end]
 
 
 def compute_csat(responses: list[dict]) -> float:

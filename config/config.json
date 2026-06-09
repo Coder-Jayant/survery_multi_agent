@@ -2,7 +2,7 @@
   "provider": "groq",
   "model": "llama-3.3-70b-versatile",
   "api_keys": {
-    "groq": "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",
+    "groq": "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",
     "openai": "",
     "gemini": "AQ.Ab8RN6IY88QLecn78-WaRVW0D5eTKJc_1X27OOYher0KVWyGQA",
     "anthropic": "",

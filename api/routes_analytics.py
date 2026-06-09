@@ -28,7 +28,7 @@ def _period_metrics(period_key: str) -> dict:
     if period_key not in PERIOD_RANGES:
         return {}
     start, end, label = PERIOD_RANGES[period_key]
-    responses = list(_load_responses())
+    responses = _load_responses()
     filtered = filter_by_period(responses, start, end)
     if not filtered:
         return {"month": period_key, "label": label, "csat_score": 0, "avg_rating": 0,
