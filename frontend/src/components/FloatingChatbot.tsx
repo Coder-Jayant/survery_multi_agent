@@ -13,6 +13,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { MessageCircle, X, Send, Mic, MicOff, Volume2, VolumeX, Minimize2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -117,6 +118,8 @@ declare global {
 }
 
 export function FloatingChatbot() {
+  const location = useLocation()
+  const onAnalyst = location.pathname === '/' || location.pathname === '/analyst'
   const [open, setOpen] = useState(false)
   const [minimized, setMinimized] = useState(false)
   const [msgs, setMsgs] = useState<ChatMsg[]>([])
@@ -238,7 +241,10 @@ export function FloatingChatbot() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 shadow-2xl shadow-indigo-500/30 flex items-center justify-center transition-all hover:scale-110 group"
+          className={cn(
+            'fixed z-40 w-12 h-12 md:w-14 md:h-14 rounded-full bg-indigo-600 hover:bg-indigo-500 shadow-2xl shadow-indigo-500/30 flex items-center justify-center transition-all hover:scale-110 group',
+            onAnalyst ? 'bottom-28 right-4 md:bottom-6 md:right-6' : 'bottom-6 right-4 md:right-6',
+          )}
           title="Chat with Jayant's AI"
         >
           <MessageCircle className="w-6 h-6 text-white" />
@@ -249,9 +255,10 @@ export function FloatingChatbot() {
       {/* Chat window */}
       {open && (
         <div className={cn(
-          'fixed bottom-4 right-4 z-50 rounded-2xl border border-[#2a2a3a] bg-[#0e0e16] shadow-2xl shadow-black/50 flex flex-col transition-all',
+          'fixed z-40 rounded-2xl border border-[#2a2a3a] bg-[#0e0e16] shadow-2xl shadow-black/50 flex flex-col transition-all',
           'w-[calc(100vw-32px)] sm:w-80',
-          minimized ? 'h-12' : 'h-[420px] sm:h-[480px]'
+          onAnalyst ? 'bottom-28 right-4 md:bottom-4 md:right-4' : 'bottom-4 right-4',
+          minimized ? 'h-12' : 'h-[380px] sm:h-[480px]'
         )}>
           {/* Header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-[#2a2a3a] rounded-t-2xl bg-[#12121a]">

@@ -176,25 +176,42 @@ export function createSSEStream(
 ): () => void {
   const url = api.streamUrl(question)
   const es = new EventSource(url)
+  let finished = false
+  let closedByUs = false
+
+  const close = () => {
+    closedByUs = true
+    es.close()
+  }
 
   es.onmessage = (e) => {
     try {
       const data = JSON.parse(e.data) as SSEEvent
       onEvent(data)
-      if (data.type === 'done' || data.type === 'error') {
-        es.close()
-        if (data.type === 'done') onDone()
-        else onError(data.message)
+      if (data.type === 'done') {
+        finished = true
+        close()
+        onDone()
+      } else if (data.type === 'error') {
+        finished = true
+        close()
+        onError(data.message ?? 'Stream error')
       }
     } catch {
-      // ignore parse errors
+      // ignore malformed chunks
     }
   }
 
+  // Mobile browsers often fire onerror after a normal stream close — ignore those.
   es.onerror = () => {
-    es.close()
-    onError('Connection lost')
+    if (finished || closedByUs) return
+    finished = true
+    close()
+    onError('Connection lost — check network and retry')
   }
 
-  return () => es.close()
+  return () => {
+    finished = true
+    close()
+  }
 }

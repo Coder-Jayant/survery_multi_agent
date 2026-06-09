@@ -157,7 +157,12 @@ def stream_endpoint(question: str):
 
     def generate():
         while True:
-            event = event_queue.get()
+            try:
+                event = event_queue.get(timeout=12)
+            except queue.Empty:
+                # Keepalive — mobile networks/proxies drop idle SSE connections
+                yield ": keepalive\n\n"
+                continue
             if event is None:
                 break
             yield f"data: {json.dumps(event)}\n\n"

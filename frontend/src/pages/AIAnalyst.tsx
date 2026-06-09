@@ -68,12 +68,14 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
     if (prefill) setInput(prefill)
   }, [prefill])
 
+  const scrollBehavior = typeof window !== 'undefined' && window.innerWidth < 768 ? 'auto' : 'smooth'
+
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    bottomRef.current?.scrollIntoView({ behavior: scrollBehavior })
   }, [messages])
 
   useEffect(() => {
-    traceBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    traceBottomRef.current?.scrollIntoView({ behavior: scrollBehavior })
   }, [traceSteps])
 
   const submit = useCallback((question: string) => {
@@ -161,6 +163,7 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
   const topChunkScore = activeChunks[0]?.score ?? 0
   const confidence = topChunkScore >= 0.5 ? 'High' : topChunkScore >= 0.3 ? 'Medium' : topChunkScore > 0 ? 'Low' : '—'
   const confidenceColor = topChunkScore >= 0.5 ? 'text-emerald-400' : topChunkScore >= 0.3 ? 'text-yellow-400' : 'text-red-400'
+  const liveStatus = getLiveStatus(traceSteps)
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-48px)] md:h-screen overflow-hidden">
@@ -214,7 +217,15 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
                 <div className="space-y-2.5">
                   <div className="rounded-xl border border-[#2a2a3a] bg-[#12121a] p-4">
                     {msg.streaming ? (
-                      <StreamingText text={msg.text || '…'} className="text-sm text-[#ccccdd] leading-relaxed" />
+                      <div className="space-y-2">
+                        {running && (
+                          <p className="text-xs text-emerald-400 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            {liveStatus}
+                          </p>
+                        )}
+                        <StreamingText text={msg.text || '…'} className="text-sm text-[#ccccdd] leading-relaxed" />
+                      </div>
                     ) : (
                       <p className="text-sm text-[#ccccdd] leading-relaxed">{msg.text}</p>
                     )}
@@ -279,8 +290,27 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
           </div>
         )}
 
+        {/* Mobile live trace — compact strip above input */}
+        <div className="md:hidden shrink-0 border-t border-[#2a2a3a] bg-[#0a0a12]">
+          <div className="px-3 py-1.5 flex items-center gap-2 border-b border-[#2a2a3a]/40">
+            <span className="text-[10px] font-semibold text-white uppercase tracking-wider">Agent Trace</span>
+            {running && <span className="text-[10px] text-emerald-400 animate-pulse">● Live</span>}
+            {!running && traceSteps.length > 0 && (
+              <span className="text-[10px] text-[#8888aa]">{traceSteps.length} steps</span>
+            )}
+          </div>
+          <div className="px-3 py-2 max-h-[72px] overflow-y-auto space-y-1">
+            {traceSteps.length === 0 && running && (
+              <p className="text-[11px] text-[#8888aa]">Starting agents…</p>
+            )}
+            {traceSteps.slice(-4).map((step, i) => (
+              <MobileTraceLine key={i} step={step} />
+            ))}
+          </div>
+        </div>
+
         {/* Input */}
-        <div className="px-4 py-3 border-t border-[#2a2a3a]">
+        <div className="px-4 py-3 pb-4 border-t border-[#2a2a3a]">
           <div className="flex gap-2 items-end">
             <textarea
               ref={inputRef}
@@ -409,6 +439,33 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
         </div>
       </div>
     </div>
+  )
+}
+
+function getLiveStatus(steps: TraceStep[]): string {
+  if (steps.length === 0) return 'Planning query…'
+  const last = steps[steps.length - 1]
+  if (last.type === 'plan') return 'Plan ready — running agents…'
+  if (last.type === 'agent_start' && last.agent) return `${agentLabel(last.agent)} started`
+  if (last.type === 'tool_call' && last.tool) return `Calling ${last.tool}…`
+  if (last.type === 'tool_result') return 'Processing tool result…'
+  if (last.type === 'agent_done' && last.agent) return `${agentLabel(last.agent)} finished`
+  if (last.type === 'done') return 'Synthesizing answer…'
+  return 'Working…'
+}
+
+function MobileTraceLine({ step }: { step: TraceStep }) {
+  let text = step.type
+  if (step.type === 'agent_start' && step.agent) text = `${agentLabel(step.agent)}: ${(step.intent ?? '').slice(0, 40)}`
+  else if (step.type === 'tool_call' && step.tool) text = `→ ${step.tool}`
+  else if (step.type === 'agent_done' && step.agent) text = `✓ ${agentLabel(step.agent)}`
+  else if (step.type === 'plan') text = `Plan: ${step.tasks?.length ?? 0} tasks`
+
+  return (
+    <p className="text-[11px] text-[#aaaaaa] truncate leading-tight">
+      <span className="text-[#6666888] font-mono text-[10px] mr-1">{step.type}</span>
+      {text}
+    </p>
   )
 }
 
