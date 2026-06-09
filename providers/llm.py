@@ -100,6 +100,17 @@ class LLM:
                 self._client = Anthropic(api_key=key)
                 self.model = (self.model or "claude-3-5-sonnet-20241022").lstrip("★ ")
 
+            elif self.provider == "openrouter":
+                key = self._api_keys.get("openrouter") or os.getenv("OPENROUTER_API_KEY", "")
+                if not key:
+                    return self._disable("missing OpenRouter API key — add it in Admin Center")
+                from openai import OpenAI
+                self._client = OpenAI(
+                    api_key=key,
+                    base_url="https://openrouter.ai/api/v1",
+                )
+                self.model = (self.model or "nex-agi/nex-n2-pro").lstrip("★ ")
+
             elif self.provider == "vllm":
                 from openai import OpenAI
                 self._client = OpenAI(
