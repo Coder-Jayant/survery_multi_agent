@@ -14,9 +14,11 @@ const PROVIDER_MODELS: Record<string, string[]> = {
   anthropic: ['★ claude-3-5-sonnet-20241022', 'claude-3-haiku-20240307'],
   grok: ['★ grok-2', 'grok-beta'],
   openrouter: [
-    '★ nex-agi/nex-n2-pro',
-    'nvidia/nemotron-3.5-content-safety',
-    'nvidia/nemotron-3-ultra',
+    '★ nex-agi/nex-n2-pro:free',
+    'nvidia/nemotron-3.5-content-safety:free',
+    'nvidia/nemotron-3-ultra:free',
+    'sourceful/riverflow-v2.5-pro:free',
+    'sourceful/riverflow-v2.5-fast:free',
     'qwen/qwen-3.7-plus',
     'minimax/minimax-m3',
     'stepfun/step-3.7-flash',
@@ -32,7 +34,7 @@ const STAR_REASONS: Record<string, string> = {
   '★ gemini-2.5-flash': '★ Best Gemini model — Gemini 2.5 Flash is the latest and most capable in the free tier with strong reasoning and instruction-following at low latency.',
   '★ claude-3-5-sonnet-20241022': '★ Best Anthropic model — top instruction-following quality with reliable structured output.',
   '★ grok-2': '★ Best Grok model — most capable in the family for multi-step reasoning.',
-  '★ nex-agi/nex-n2-pro': '★ Best free OpenRouter model — powerful MoE architecture with excellent reasoning.',
+  '★ nex-agi/nex-n2-pro:free': '★ Best free OpenRouter model — powerful MoE architecture with excellent reasoning.',
   '★ all-MiniLM-L6-v2': '★ Best embedding model here — 384-dim vectors, runs on CPU in ~10ms, trained on 1B+ pairs, top BEIR benchmark performer at its size. No GPU required.',
   '★ paragraph': '★ Best chunking strategy — preserves Q&A pairs as atomic semantic units. Fixed-size risks splitting question from its answer. Sentence-aware is overkill for a focused FAQ.',
 }

@@ -109,7 +109,7 @@ class LLM:
                     api_key=key,
                     base_url="https://openrouter.ai/api/v1",
                 )
-                self.model = (self.model or "nex-agi/nex-n2-pro").lstrip("★ ")
+                self.model = (self.model or "nex-agi/nex-n2-pro:free").lstrip("★ ")
 
             elif self.provider == "vllm":
                 from openai import OpenAI
