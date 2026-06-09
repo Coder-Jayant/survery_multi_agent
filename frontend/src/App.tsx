@@ -9,6 +9,7 @@ import { ArchitectureCenter } from '@/pages/ArchitectureCenter'
 import { AdminCenter } from '@/pages/AdminCenter'
 import { AboutProject } from '@/pages/AboutProject'
 import { AboutDeveloper } from '@/pages/AboutDeveloper'
+import { FineTuning } from '@/pages/FineTuning'
 import { AnalystProvider } from '@/context/AnalystContext'
 import { FloatingChatbot } from '@/components/FloatingChatbot'
 
@@ -33,6 +34,7 @@ function AppLayout() {
           <Route path="/admin" element={<AdminCenter />} />
           <Route path="/about-project" element={<AboutProject />} />
           <Route path="/about-developer" element={<AboutDeveloper />} />
+          <Route path="/finetuning" element={<FineTuning />} />
         </Routes>
       </main>
       <FloatingChatbot />

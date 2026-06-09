@@ -38,30 +38,58 @@ Keep answers under 3 sentences unless more detail is specifically requested.
 --- END PROFILE ---
 
 --- MINISENSE PROJECT OVERVIEW ---
-MiniSense is a production-grade multi-agent AI platform that analyses customer survey responses for GreenLeaf Bistro (fictional business).
+MiniSense is a production-grade multi-agent AI platform that analyses customer survey responses for GreenLeaf Bistro (a fictional restaurant chain). It demonstrates real agentic AI, not a simple chatbot.
 
-Architecture:
-- Orchestrator Agent: Plans execution using LLM tool-calling, decomposes queries, routes to sub-agents
-- DataAgent: Extracts quantitative metrics (CSAT, ratings, themes) via Groq function-calling with deterministic Python fallback
-- RAGAgent: Answers factual questions using 2-stage retrieval — FAISS bi-encoder (fast) + cross-encoder reranker (precise)
-- ComparisonAgent: Period-over-period analysis with delta metrics
-- SummaryAgent: Synthesises all results into business-language narrative
+AGENT ARCHITECTURE:
+- Orchestrator: Plans execution via LLM tool-calling, decomposes natural language queries into a task plan, routes to the right sub-agents in sequence
+- DataAgent: Extracts quantitative metrics (CSAT score, avg rating, response counts, themes) via Groq function-calling with tool calls. Has deterministic Python fallback if LLM is unavailable
+- RAGAgent: 2-stage retrieval — FAISS bi-encoder for fast candidate retrieval, then cross-encoder reranker (ms-marco-MiniLM-L-6-v2) for precise re-scoring. Sigmoid applied to reranker scores for interpretability
+- ComparisonAgent: Period-over-period analysis with delta metrics (e.g. April vs May CSAT shift)
+- SummaryAgent: Synthesises all agent results into a business-language executive narrative
 
-Tech Stack:
-- Backend: FastAPI (Python), Groq LLM (llama-3.3-70b-versatile), FAISS, sentence-transformers
-- Reranker: cross-encoder/ms-marco-MiniLM-L-6-v2 (local, CPU, no API cost)
-- Frontend: React + TypeScript + Vite + Tailwind + shadcn/ui
-- Real-time: Server-Sent Events (SSE) for live agent tracing
-- Charts: Recharts | Diagrams: Mermaid.js | Agent graph: React Flow
+RAG PIPELINE DETAILS:
+- FAISS vector store with sentence-transformers embeddings (all-MiniLM-L6-v2)
+- Cross-encoder reranking: scores all candidates, then sorts by relevance — FAISS score shown to user for interpretability, reranker score used for ordering
+- 100+ curated FAQ document for GreenLeaf Bistro knowledge base
+- Chunking strategy: paragraph-level with overlap for context preservation
 
-Key features:
-- Live agent graph showing execution flow in real-time
-- Evaluation Lab with automated quality scoring
-- Admin Center with provider switching (Groq/OpenAI/Gemini/Anthropic)
-- Knowledge Base with chunk inspection and retrieval testing
-- 100+ FAQ knowledge base with 2-stage RAG
-- Period caching to reduce redundant LLM calls
-- Full test suite (pytest)
+REAL-TIME OBSERVABILITY:
+- Server-Sent Events (SSE) stream every agent action live to the frontend
+- Live agent graph (React Flow) showing which agents are active/done
+- Agent Trace panel: shows plan, tool calls, tool results, agent start/done events
+- Evidence panel: shows retrieved RAG chunks with scores and metadata
+
+FINE-TUNING USE CASE:
+- Platform has a dedicated Fine-Tuning tab explaining domain adaptation strategy
+- Would fine-tune Llama-3-8B or Mistral-7B using QLoRA on GreenLeaf survey data
+- Tasks: theme classification, sentiment analysis, narrative generation, FAQ answering
+- Estimated improvements: +20% theme accuracy, -9% hallucination rate
+- Serves via vLLM + KServe; OpenAI-compatible API means zero MiniSense code changes
+
+EVALUATION SYSTEM:
+- Evaluation Lab runs automated quality scoring on agent responses
+- Metrics: relevance, accuracy, completeness, latency
+- Run history tracked in JSONL for trend analysis
+
+ADMIN CENTER:
+- Multi-provider LLM switching: Groq, OpenAI, Gemini (gemini-2.5-flash), Anthropic
+- Best options marked with ★ in dropdowns with explanations
+- API keys stored server-side only — never in client JS bundle
+
+TECH STACK:
+- Backend: Python, FastAPI, Groq/Gemini/OpenAI APIs, FAISS, sentence-transformers, cross-encoder
+- Frontend: React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, React Flow, Recharts, Mermaid.js
+- Real-time: Server-Sent Events (SSE)
+- Testing: pytest test suite covering agents, RAG, and API endpoints
+- Deployment: Railway (backend + pre-built frontend), Procfile + nixpacks
+
+MOBILE SUPPORT:
+- Fully mobile-responsive: slide-in sidebar drawer, hamburger menu, stacked layouts on small screens
+
+DATA:
+- 60,000+ synthetic survey responses generated across Jan–May 2026
+- Themes: food_quality, wait_time, app_experience, service, ambiance, pricing
+- Stored as JSON, served via FastAPI endpoints
 --- END PROJECT ---`
 
 // SpeechRecognition type declarations

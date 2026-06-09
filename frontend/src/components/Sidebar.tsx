@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Bot, BarChart2, BookOpen,
   FlaskConical, Building2, Settings, Info, User,
-  ChevronLeft, ChevronRight, Leaf, Activity, Menu, X
+  ChevronLeft, ChevronRight, Leaf, Activity, Menu, X, Cpu
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -19,6 +19,7 @@ const NAV_SECTIONS = [
   {
     items: [
       { path: '/eval-lab', label: 'Evaluation Lab', icon: FlaskConical },
+      { path: '/finetuning', label: 'Fine-Tuning', icon: Cpu },
     ],
   },
   {

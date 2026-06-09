@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { ExternalLink, GitBranch, Globe, Code2, Brain, Database, Cpu, Mic, Server, Mail, MapPin, Layers, Zap } from 'lucide-react'
 
 const EXPERTISE = [
@@ -82,13 +83,24 @@ const ICON_COLOR_MAP: Record<string, string> = {
 }
 
 export function AboutDeveloper() {
+  const [photoErr, setPhotoErr] = useState(false)
+
   return (
     <div className="p-6 max-w-4xl space-y-8 animate-fade-in">
 
       {/* Hero */}
       <div className="rounded-2xl border border-[#2a2a3a] bg-gradient-to-br from-[#12121a] to-[#0e0e1a] p-8 text-center space-y-4">
-        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/20 border-2 border-indigo-500/50 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/10">
-          <span className="text-3xl font-black text-indigo-300">JV</span>
+        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/20 border-2 border-indigo-500/50 flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/10 overflow-hidden">
+          {!photoErr ? (
+            <img
+              src="/profile.jpg"
+              alt="Jayant Verma"
+              className="w-full h-full object-cover"
+              onError={() => setPhotoErr(true)}
+            />
+          ) : (
+            <span className="text-3xl font-black text-indigo-300">JV</span>
+          )}
         </div>
         <div>
           <h1 className="text-3xl font-black text-white tracking-tight">Jayant Verma</h1>
