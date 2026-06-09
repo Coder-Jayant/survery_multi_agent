@@ -109,7 +109,18 @@ class LLM:
                     api_key=key,
                     base_url="https://openrouter.ai/api/v1",
                 )
-                self.model = (self.model or "nex-agi/nex-n2-pro:free").lstrip("★ ")
+                self.model = (self.model or "nvidia/nemotron-3-ultra-550b-a55b:free").lstrip("★ ")
+                # Ensure :free suffix on known free-tier models (browser cache may strip it)
+                _free_base_ids = {
+                    "nex-agi/nex-n2-pro",
+                    "nvidia/nemotron-3-ultra-550b-a55b",
+                    "nvidia/nemotron-3.5-content-safety",
+                    "nvidia/llama-3.3-nemotron-super-49b-v1",
+                    "qwen/qwen3-235b-a22b",
+                    "deepseek/deepseek-r1",
+                }
+                if self.model in _free_base_ids:
+                    self.model += ":free"
 
             elif self.provider == "vllm":
                 from openai import OpenAI
@@ -168,6 +179,8 @@ class LLM:
 
         r = self._client.chat.completions.create(**kwargs)
         msg = r.choices[0].message
+
+        print(f"[LLM] model={self.model} tool_calls={bool(msg.tool_calls)} content_len={len(msg.content or '')}")
 
         calls = []
         for tc in (msg.tool_calls or []):
