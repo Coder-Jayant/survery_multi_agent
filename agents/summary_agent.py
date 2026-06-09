@@ -28,6 +28,7 @@ from schemas.models import (
     SummaryAgentResult,
     TaskSpec,
 )
+from tools.viz_builder import build_visualization
 
 load_dotenv()
 
@@ -190,4 +191,18 @@ def run(
         key_metrics["emerging_themes"] = comparison_result.emerging_themes
         key_metrics["declining_themes"] = comparison_result.declining_themes
 
-    return SummaryAgentResult(narrative=narrative, key_metrics=key_metrics)
+    # ── Build visualization spec ──────────────────────────────────────────────
+    try:
+        viz = build_visualization(
+            question=task.context.get("original_question", task.intent),
+            data_result=data_result,
+            comparison_result=comparison_result or (
+                all_comparison_results[-1] if all_comparison_results else None
+            ),
+            all_comparison_results=all_comparison_results,
+        )
+    except Exception as e:
+        print(f"[SummaryAgent] viz_builder error (non-fatal): {e}")
+        viz = None
+
+    return SummaryAgentResult(narrative=narrative, key_metrics=key_metrics, visualization=viz)

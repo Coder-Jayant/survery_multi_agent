@@ -8,7 +8,7 @@ and sub-agents always return typed result objects — never raw strings.
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
 
@@ -79,10 +79,34 @@ class ComparisonAgentResult(BaseModel):
     declining_themes: list[str] = Field(default_factory=list, description="Themes that declined significantly")
     insight_summary: str = Field(..., description="1-2 sentence plain English delta summary")
 
+# ---------------------------------------------------------------------------
+# Visualization Spec  (attached to SummaryAgentResult → sent in done SSE event)
+# ---------------------------------------------------------------------------
+
+class VizSpec(BaseModel):
+    """Recharts-ready visualization spec.
+
+    type:
+        bar          — single-series horizontal bar (themes, rating dist)
+        grouped_bar  — multi-series vertical bar (period comparison)
+        pie          — pie / donut chart
+        table        — HTML table (metric comparison)
+    """
+    type: str = Field(..., description="bar | grouped_bar | pie | table")
+    title: str
+    data: list[dict] = Field(default_factory=list, description="Recharts-ready row array")
+    x_key: Optional[str] = None           # category key (theme, metric, name)
+    y_keys: Optional[list[str]] = None    # series keys for grouped_bar / table columns
+    value_key: Optional[str] = None       # single value key for bar / pie
+    colors: Optional[list[str]] = None
+    unit: Optional[str] = None            # "%" | "/5" | "responses"
+
+
 
 class SummaryAgentResult(BaseModel):
     narrative: str = Field(..., description="Final coherent business-language answer paragraph")
     key_metrics: dict[str, Any] = Field(default_factory=dict)
+    visualization: Optional[VizSpec] = Field(None, description="Optional chart/table for the answer")
 
 
 # ---------------------------------------------------------------------------

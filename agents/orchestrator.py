@@ -362,5 +362,6 @@ def ask(question: str, verbose: bool = False, trace_callback=None) -> FinalAnswe
         "metrics": final.supporting_data,
         "sources": final.sources,
         "trace": final.agent_trace,
+        "visualization": summary_result.visualization.model_dump() if summary_result.visualization else None,
     }})
     return final

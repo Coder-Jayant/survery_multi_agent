@@ -5,9 +5,10 @@ import { AgentBadge } from '@/components/AgentBadge'
 import { AgentGraph } from '@/components/AgentGraph'
 import { ChunkCard } from '@/components/ChunkCard'
 import { StreamingText } from '@/components/StreamingText'
+import { AnswerViz } from '@/components/AnswerViz'
 import { cn, agentLabel, formatPercent, formatRating } from '@/lib/utils'
 import { useAnalyst } from '@/context/AnalystContext'
-import type { SSEEvent, RetrievedChunk } from '@/types'
+import type { SSEEvent, RetrievedChunk, VizSpec } from '@/types'
 
 interface Message {
   id: string
@@ -19,6 +20,7 @@ interface Message {
   metrics?: Record<string, unknown>
   sources?: string[]
   latencyMs?: number
+  visualization?: VizSpec | null
 }
 
 interface TraceStep {
@@ -137,6 +139,7 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
                   metrics: ans.metrics,
                   chunks: activeChunks,
                   latencyMs: latency,
+                  visualization: ans.visualization ?? null,
                 }
               : m
           ))
@@ -228,6 +231,10 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
                       </div>
                     ) : (
                       <p className="text-sm text-[#ccccdd] leading-relaxed">{msg.text}</p>
+                    )}
+                    {/* Visualization — rendered after streaming completes */}
+                    {!msg.streaming && msg.visualization && (
+                      <AnswerViz viz={msg.visualization} />
                     )}
                     {msg.agentTrace && (
                       <div className="mt-3 flex flex-wrap gap-1.5 border-t border-[#2a2a3a] pt-3">

@@ -196,6 +196,18 @@ export interface RunRecord {
   sources: string[]
 }
 
+// Visualization spec (mirrors backend VizSpec Pydantic model)
+export interface VizSpec {
+  type: 'bar' | 'grouped_bar' | 'pie' | 'table'
+  title: string
+  data: Array<Record<string, unknown>>
+  x_key?: string
+  y_keys?: string[]
+  value_key?: string
+  colors?: string[]
+  unit?: string
+}
+
 // SSE event types
 export type SSEEvent =
   | { type: 'plan'; tasks: Array<{ agent: string; intent: string }>; count: number }
@@ -203,5 +215,5 @@ export type SSEEvent =
   | { type: 'tool_call'; agent: string; tool: string; args: Record<string, unknown> }
   | { type: 'tool_result'; agent: string; tool: string; result: string }
   | { type: 'agent_done'; agent: string; step: number; result: Record<string, unknown> }
-  | { type: 'done'; answer: { narrative: string; metrics: Record<string, unknown>; sources: string[]; trace: string[] } }
+  | { type: 'done'; answer: { narrative: string; metrics: Record<string, unknown>; sources: string[]; trace: string[]; visualization?: VizSpec | null } }
   | { type: 'error'; message: string }

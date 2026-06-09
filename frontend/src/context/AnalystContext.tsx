@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
-import type { RetrievedChunk } from '@/types'
+import type { RetrievedChunk, VizSpec } from '@/types'
 
 interface Message {
   id: string
@@ -11,6 +11,7 @@ interface Message {
   metrics?: Record<string, unknown>
   sources?: string[]
   latencyMs?: number
+  visualization?: VizSpec | null
 }
 
 interface TraceStep {
