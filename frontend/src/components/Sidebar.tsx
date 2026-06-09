@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Bot, BarChart2, BookOpen,
   FlaskConical, Building2, Settings, Info, User,
-  ChevronLeft, ChevronRight, Leaf, Activity
+  ChevronLeft, ChevronRight, Leaf, Activity, Menu, X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -37,13 +37,45 @@ const NAV_SECTIONS = [
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
 
+  const closeMobile = () => setMobileOpen(false)
+
   return (
+    <>
+      {/* ── Mobile top bar (hidden on md+) ─────────────────────── */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-12 bg-[#0e0e16] border-b border-[#2a2a3a] flex items-center px-4 gap-3">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="p-1.5 rounded-md hover:bg-[#2a2a3a] text-[#8888aa] hover:text-white transition-colors"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="w-6 h-6 rounded-md bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center">
+          <Leaf className="w-3.5 h-3.5 text-indigo-400" />
+        </div>
+        <span className="text-sm font-bold text-white">MiniSense</span>
+      </div>
+
+      {/* ── Mobile backdrop ────────────────────────────────────── */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+          onClick={closeMobile}
+        />
+      )}
+
+      {/* ── Sidebar ───────────────────────────────────────────── */}
     <aside
       className={cn(
-        'flex flex-col h-screen sticky top-0 transition-all duration-300 ease-in-out border-r border-[#2a2a3a] bg-[#0e0e16] z-50',
-        collapsed ? 'w-16' : 'w-60'
+        'flex flex-col h-screen border-r border-[#2a2a3a] bg-[#0e0e16] z-50 transition-all duration-300 ease-in-out',
+        // Desktop: sticky, width collapses
+        'md:sticky md:top-0',
+        collapsed ? 'md:w-16' : 'md:w-60',
+        // Mobile: fixed drawer, full width 240px, slides in/out
+        'fixed top-0 left-0 w-64',
+        mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
       )}
     >
       {/* Logo */}
@@ -57,11 +89,19 @@ export function Sidebar() {
             <div className="text-[10px] text-[#8888aa] leading-tight">Customer Intelligence</div>
           </div>
         )}
+        {/* Desktop collapse toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="ml-auto p-1 rounded-md hover:bg-[#2a2a3a] text-[#8888aa] hover:text-white transition-colors shrink-0"
+          className="ml-auto p-1 rounded-md hover:bg-[#2a2a3a] text-[#8888aa] hover:text-white transition-colors shrink-0 hidden md:flex"
         >
           {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
+        </button>
+        {/* Mobile close button */}
+        <button
+          onClick={closeMobile}
+          className="ml-auto p-1 rounded-md hover:bg-[#2a2a3a] text-[#8888aa] hover:text-white transition-colors shrink-0 md:hidden"
+        >
+          <X className="w-4 h-4" />
         </button>
       </div>
 
@@ -77,6 +117,7 @@ export function Sidebar() {
                 <NavLink
                   key={path}
                   to={path}
+                  onClick={closeMobile}
                   className={cn(
                     'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150 group',
                     active
@@ -106,5 +147,6 @@ export function Sidebar() {
         )}
       </div>
     </aside>
+    </>
   )
 }
