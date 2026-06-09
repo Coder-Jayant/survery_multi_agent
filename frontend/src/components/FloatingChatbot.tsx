@@ -21,8 +21,6 @@ interface ChatMsg {
   text: string
 }
 
-const CHATBOT_KEY = import.meta.env.VITE_CHATBOT_GROQ_KEY as string | undefined
-const GROQ_API = 'https://api.groq.com/openai/v1/chat/completions'
 const CHATBOT_MODEL = 'llama-3.3-70b-versatile'
 
 const SYSTEM_PROMPT_BASE = `You are Jayant's AI representative and project guide for MiniSense.
@@ -136,20 +134,9 @@ export function FloatingChatbot() {
     setLoading(true)
 
     try {
-      if (!CHATBOT_KEY) {
-        setMsgs(prev => [...prev, {
-          role: 'assistant',
-          text: 'Chatbot API key not configured. Add VITE_CHATBOT_GROQ_KEY to your .env file.',
-        }])
-        return
-      }
-
-      const res = await fetch(GROQ_API, {
+      const res = await fetch('/api/chatbot', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${CHATBOT_KEY}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: CHATBOT_MODEL,
           temperature: 0.5,
@@ -161,8 +148,15 @@ export function FloatingChatbot() {
         }),
       })
 
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        const detail = err.detail ?? `Server error ${res.status}`
+        setMsgs(prev => [...prev, { role: 'assistant', text: `⚠️ ${detail}` }])
+        return
+      }
+
       const data = await res.json()
-      const reply = data.choices?.[0]?.message?.content ?? 'Sorry, I could not generate a response.'
+      const reply = data.reply ?? 'Sorry, I could not generate a response.'
       setMsgs(prev => [...prev, { role: 'assistant', text: reply }])
 
       if (speakOn) speak(reply)
@@ -227,8 +221,9 @@ export function FloatingChatbot() {
       {/* Chat window */}
       {open && (
         <div className={cn(
-          'fixed bottom-6 right-6 z-50 w-80 rounded-2xl border border-[#2a2a3a] bg-[#0e0e16] shadow-2xl shadow-black/50 flex flex-col transition-all',
-          minimized ? 'h-12' : 'h-[480px]'
+          'fixed bottom-4 right-4 z-50 rounded-2xl border border-[#2a2a3a] bg-[#0e0e16] shadow-2xl shadow-black/50 flex flex-col transition-all',
+          'w-[calc(100vw-32px)] sm:w-80',
+          minimized ? 'h-12' : 'h-[420px] sm:h-[480px]'
         )}>
           {/* Header */}
           <div className="flex items-center gap-2 px-4 py-3 border-b border-[#2a2a3a] rounded-t-2xl bg-[#12121a]">

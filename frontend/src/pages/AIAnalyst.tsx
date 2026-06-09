@@ -163,9 +163,9 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
   const confidenceColor = topChunkScore >= 0.5 ? 'text-emerald-400' : topChunkScore >= 0.3 ? 'text-yellow-400' : 'text-red-400'
 
   return (
-    <div className="flex h-[calc(100vh-0px)] overflow-hidden">
+    <div className="flex flex-col md:flex-row h-[calc(100vh-48px)] md:h-screen overflow-hidden">
       {/* Panel 1 — Conversation */}
-      <div className="flex-1 flex flex-col border-r border-[#2a2a3a] min-w-0">
+      <div className="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-[#2a2a3a] min-w-0 min-h-0">
         <div className="px-4 py-3 border-b border-[#2a2a3a] flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-indigo-400" />
           <span className="text-sm font-semibold text-white">AI Analyst</span>
@@ -306,8 +306,8 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
         </div>
       </div>
 
-      {/* Panel 2 — Agent Trace */}
-      <div className="w-72 flex flex-col border-r border-[#2a2a3a] min-w-0">
+      {/* Panel 2 — Agent Trace (hidden on mobile) */}
+      <div className="hidden md:flex w-72 flex-col border-r border-[#2a2a3a] min-w-0">
         <div className="px-4 py-3 border-b border-[#2a2a3a] flex items-center gap-2">
           <span className="text-sm font-semibold text-white">Agent Trace</span>
           {running && <span className="text-xs text-emerald-400 animate-pulse">● Live</span>}
@@ -347,8 +347,8 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
         </div>
       </div>
 
-      {/* Panel 3 — Evidence */}
-      <div className="w-72 flex flex-col min-w-0">
+      {/* Panel 3 — Evidence (hidden on mobile) */}
+      <div className="hidden md:flex w-72 flex-col min-w-0">
         <div className="px-4 py-3 border-b border-[#2a2a3a] flex items-center justify-between">
           <span className="text-sm font-semibold text-white">Evidence</span>
           {activeChunks.length > 0 && (

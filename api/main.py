@@ -97,6 +97,7 @@ from api.routes_config import router as config_router
 from api.routes_eval import router as eval_router
 from api.routes_data import router as data_router
 from api.routes_history import router as history_router
+from api.routes_chatbot import router as chatbot_router
 
 app.include_router(dashboard_router)
 app.include_router(analytics_router)
@@ -106,6 +107,7 @@ app.include_router(config_router)
 app.include_router(eval_router)
 app.include_router(data_router)
 app.include_router(history_router)
+app.include_router(chatbot_router)
 
 
 class QuestionRequest(BaseModel):
