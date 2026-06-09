@@ -10,8 +10,6 @@ import io
 import json
 import os
 import zipfile
-from datetime import datetime, timezone
-
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
@@ -21,7 +19,7 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 _SKIP_DIRS = {
     ".git", ".venv", "venv", "node_modules", "__pycache__",
-    ".cursor", "minisense",
+    ".cursor", "minisense", ".pytest_cache",
 }
 
 _SKIP_FILES = {

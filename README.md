@@ -1,36 +1,44 @@
-# MiniSense — Survey Analysis Agent
+# MiniSense — Multi-Agent Customer Intelligence Platform
 
-A runnable AI system that answers business questions about survey feedback using a **multi-agent architecture**, **RAG**, and **structured data analysis**.
+A production-grade AI system that answers business questions about survey feedback using **multi-agent orchestration**, **RAG with reranking**, and **full observability**.
 
-Built for: GreenLeaf Bistro (fictional business) | Dataset: 100,000 survey responses
+Built for: GreenLeaf Bistro (fictional business) | Dataset: 60,000+ survey responses
+
+> **Assignment reviewers:** Start with **[ASSIGNMENT_SUBMISSION.md](./ASSIGNMENT_SUBMISSION.md)** — approach, assumptions, setup, and doc index.
 
 ---
 
-## Quick Start
+## Quick Start (Web Platform)
 
 ```bash
-# 1. Clone and install
+# 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Configure API key
+# 2. Configure API key (or use Admin Center in the UI after launch)
 cp .env.example .env
-# Edit .env and add your GROQ_API_KEY (free at console.groq.com)
+# Add GROQ_API_KEY=... (free at console.groq.com)
 
-# 3. Generate survey dataset (~100k records)
+# 3. Run server (serves API + pre-built React frontend)
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+
+# 4. Open http://localhost:8000
+#    → AI Analyst tab: ask business questions with live agent trace
+#    → Admin Center: paste API key if not in .env
+```
+
+Dataset (`data/survey_responses.json`) and FAISS index (`rag/vector_store/`) are **included** in the repo. Regenerate only if missing:
+
+```bash
 python data/generate_data.py
-
-# 4. Build the RAG vector store
 python rag/ingest.py
+```
 
-# 5. Ask a question
-python cli.py --question "What are the top complaints this month?" --verbose
+### CLI & Tests (optional)
 
-# 6. Run RAG evaluation
+```bash
+python cli.py --question "What are the top complaints in May 2026?" --verbose
 python evaluation/rag_eval.py
-
-# 7. (Optional) Start the API server
-uvicorn api.main:app --reload
-# Then visit http://localhost:8000/docs
+pytest tests/
 ```
 
 ---

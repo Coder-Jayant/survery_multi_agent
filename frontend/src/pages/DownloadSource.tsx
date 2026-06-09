@@ -1,10 +1,17 @@
-import { Download, FileArchive, ShieldCheck } from 'lucide-react'
+import { Download, FileArchive, ShieldCheck, BookOpen } from 'lucide-react'
 
 const EXCLUDES = [
   '.env files & API keys (config.json keys stripped)',
   '.venv / venv / node_modules',
   '__pycache__ & build caches',
-  'Assignment.docx',
+]
+
+const INCLUDED_DOCS = [
+  'ASSIGNMENT_SUBMISSION.md — start here (approach, assumptions, checklist)',
+  'README.md — setup & run instructions',
+  'ARCHITECTURE.md — system design & diagrams',
+  'INTERVIEW_PREP.md — design rationale & demo script',
+  'walkthrough.md — build summary & test outputs',
 ]
 
 export function DownloadSource() {
@@ -19,10 +26,25 @@ export function DownloadSource() {
             <h1 className="text-xl font-bold text-white">Download Source Code</h1>
             <p className="text-xs text-indigo-400/80 mt-0.5 font-mono">Jayant_Assignment_Minisense.zip</p>
             <p className="text-sm text-[#8888aa] mt-1 leading-relaxed">
-              Full MiniSense project as a ZIP — ready to clone locally. Credentials and virtual
-              environments are excluded automatically.
+              Complete assignment package: source code, documentation, dataset, and setup
+              instructions. No credentials included.
             </p>
           </div>
+        </div>
+
+        <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 space-y-2">
+          <div className="flex items-center gap-2 text-xs font-semibold text-indigo-300 uppercase tracking-wider">
+            <BookOpen className="w-3.5 h-3.5" />
+            Included documentation
+          </div>
+          <ul className="space-y-1.5">
+            {INCLUDED_DOCS.map(item => (
+              <li key={item} className="text-xs text-[#9999bb] flex items-start gap-2">
+                <span className="text-indigo-400 mt-0.5">✓</span>
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="rounded-xl border border-[#2a2a3a] bg-[#0e0e16] p-4 space-y-2">
@@ -50,8 +72,8 @@ export function DownloadSource() {
         </a>
 
         <p className="text-[11px] text-[#6666888]">
-          After extracting: copy <code className="text-indigo-300">.env.example</code> to{' '}
-          <code className="text-indigo-300">.env</code> and add your API keys in Admin Center.
+          After extracting, open <code className="text-indigo-300">ASSIGNMENT_SUBMISSION.md</code> first,
+          then follow <code className="text-indigo-300">README.md</code> to run locally.
         </p>
       </div>
     </div>

@@ -1,325 +1,384 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef } from 'react'
 import mermaid from 'mermaid'
 import {
-  Cpu, Database, Zap, Target, TrendingUp, CheckCircle,
-  GitBranch, Layers, BarChart2, AlertCircle, BookOpen, ArrowRight
+  Database, Cpu, GitBranch, BarChart2, Server, Layers,
+  ArrowRight, Tag
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'base',
-  themeVariables: {
-    primaryColor: '#1a1a2e',
-    primaryTextColor: '#e2e8f0',
-    primaryBorderColor: '#4f46e5',
-    lineColor: '#6366f1',
-    secondaryColor: '#0f172a',
-    tertiaryColor: '#1e1e2e',
-    background: '#0a0a0f',
-    mainBkg: '#12121a',
-    nodeBorder: '#4f46e5',
-    clusterBkg: '#0f0f1a',
-    titleColor: '#e2e8f0',
-    edgeLabelBackground: '#1a1a2e',
-    fontFamily: 'Inter, sans-serif',
-    fontSize: '13px',
-  },
-})
+const PIPELINE_DIAGRAM = `flowchart TB
+  classDef load fill:#1a2e1a,stroke:#22c55e,color:#86efac
+  classDef data fill:#1a1a2e,stroke:#6366f1,color:#a5b4fc
+  classDef train fill:#2e1a1a,stroke:#f59e0b,color:#fde68a
+  classDef eval fill:#2d1b4e,stroke:#a855f7,color:#d8b4fe
+  classDef serve fill:#1a2a2e,stroke:#06b6d4,color:#67e8f9
+  classDef out fill:#1e3a5f,stroke:#3b82f6,color:#93c5fd
 
-const PIPELINE_DIAGRAM = `flowchart LR
-  classDef data fill:#1a2e1a,stroke:#22c55e,color:#86efac
-  classDef process fill:#1a1a2e,stroke:#6366f1,color:#a5b4fc
-  classDef model fill:#2e1a1a,stroke:#f59e0b,color:#fde68a
-  classDef output fill:#1a2a2e,stroke:#06b6d4,color:#67e8f9
+  subgraph Load["Production"]
+    IN["10k survey responses / day\nfree-text input"]:::load
+  end
 
-  A[("Survey<br/>Responses<br/>60K+")]:::data
-  B["Label<br/>Pipeline"]:::process
-  C[("Training<br/>Dataset<br/>JSONL")]:::data
-  D["LoRA / QLoRA<br/>Training"]:::process
-  E["Base LLM<br/>Llama / Mistral"]:::model
-  F["Fine-Tuned<br/>Model"]:::model
-  G["Theme<br/>Classifier"]:::output
-  H["Sentiment<br/>Analyser"]:::output
-  I["Narrative<br/>Generator"]:::output
+  subgraph Data["① Data Strategy"]
+    AUTO["GPT-4o / Gemini\nauto-label 8 classes"]:::data
+    QC["Human review\n10–15% sample"]:::data
+    DS["20k–50k labelled JSONL\n{input, output, metadata}"]:::data
+  end
 
-  A --> B
-  B --> C
-  C --> D
-  E --> D
-  D --> F
-  F --> G
-  F --> H
-  F --> I`
+  subgraph Train["②③ Train & Register"]
+    QL["QLoRA on Llama 3 8B\nNF4 + PEFT"]:::train
+    REG["Model Registry\nsurvey-classifier-v1"]:::train
+  end
 
-const COMPARISON_ROWS = [
-  { metric: 'Theme classification accuracy', base: '71%', finetuned: '91%', delta: '+20%', better: true },
-  { metric: 'Sentiment alignment with human labels', base: '78%', finetuned: '93%', delta: '+15%', better: true },
-  { metric: 'Domain terminology recognition', base: 'Low', finetuned: 'High', delta: '—', better: true },
-  { metric: 'Hallucination rate on FAQs', base: '12%', finetuned: '3%', delta: '-9%', better: true },
-  { metric: 'Narrative tone consistency', base: 'Generic', finetuned: 'Brand-aligned', delta: '—', better: true },
-  { metric: 'Avg inference latency', base: '320ms', finetuned: '340ms', delta: '+20ms', better: false },
+  subgraph EvalGate["④ Evaluation"]
+    MET["Macro F1 vs GPT-4o\ncost + latency check"]:::eval
+  end
+
+  subgraph VLLM["⑤ Serve — vLLM + LoRA"]
+    BASE["Base model\nLlama-3-8B-Instruct"]:::serve
+    ADP["LoRA adapters\nper-request, versioned"]:::serve
+    ROUTE["Classification route only\nother LLM routes unchanged"]:::serve
+  end
+
+  OUT["8-class label\nper response"]:::out
+
+  IN --> AUTO --> QC --> DS
+  DS --> QL --> REG --> MET
+  MET -->|pass| ADP
+  IN -->|live inference| BASE
+  BASE --> ADP --> ROUTE --> OUT`
+
+const CATEGORIES = [
+  'Positive – Food Quality', 'Negative – Food Quality',
+  'Positive – Wait Time', 'Negative – Wait Time',
+  'Neutral – Staff', 'Positive – Staff',
+  'Negative – App Experience', 'Neutral – Pricing',
 ]
 
-const TRAINING_TASKS = [
-  {
-    icon: Target,
-    color: 'indigo',
-    title: 'Theme Classification',
-    desc: 'Classify free-text feedback into themes: food_quality, wait_time, app_experience, service, ambiance, pricing. Base models misclassify ~29% of ambiguous responses.',
-    data: '~48K labelled examples from survey_responses.json',
-  },
-  {
-    icon: TrendingUp,
-    color: 'emerald',
-    title: 'Sentiment Analysis',
-    desc: 'Domain-calibrated sentiment scoring — distinguishing "the wait was worth it" (positive) from "the wait was acceptable" (neutral) in a restaurant context.',
-    data: '~60K examples with 1–5 star labels as weak supervision',
-  },
-  {
-    icon: BookOpen,
-    color: 'purple',
-    title: 'Narrative Generation',
-    desc: 'Generate executive-style business narratives from structured metrics. Fine-tuning teaches tone consistency, GreenLeaf brand voice, and metric citation format.',
-    data: '~2K manually curated narrative examples',
-  },
-  {
-    icon: GitBranch,
-    color: 'amber',
-    title: 'FAQ Answering',
-    desc: 'Adapt the model to answer domain-specific questions about GreenLeaf Bistro using the FAQ knowledge base — reducing hallucination on policy questions.',
-    data: '100+ FAQ pairs from faq_document.txt as instruction tuning',
-  },
-]
-
-function MermaidChart({ id, chart }: { id: string; chart: string }) {
+function PipelineDiagram() {
   const ref = useRef<HTMLDivElement>(null)
-  const [svg, setSvg] = useState('')
-  const [err, setErr] = useState('')
+  const renderId = useRef(0)
 
   useEffect(() => {
-    const uid = `${id}-${Math.random().toString(36).slice(2)}`
-    mermaid.render(uid, chart)
-      .then(r => setSvg(r.svg))
-      .catch(e => setErr(String(e)))
-  }, [chart, id])
+    let cancelled = false
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'base',
+      themeVariables: {
+        background: '#0e0e16',
+        primaryColor: '#1a1a3a',
+        primaryTextColor: '#e2e2f0',
+        primaryBorderColor: '#f59e0b',
+        edgeLabelBackground: '#12121a',
+        lineColor: '#6366f1',
+        clusterBkg: '#0f0f1a',
+        clusterBorder: '#2a2a3a',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '12px',
+      },
+    })
 
-  if (err) return <div className="text-red-400 text-xs p-4">{err}</div>
-  if (!svg) return <div className="text-[#8888aa] text-xs p-4 animate-pulse">Rendering diagram…</div>
-  return <div ref={ref} className="w-full overflow-x-auto" dangerouslySetInnerHTML={{ __html: svg }} />
+    async function render() {
+      try {
+        renderId.current += 1
+        const id = `ft-pipeline-${renderId.current}`
+        const { svg } = await mermaid.render(id, PIPELINE_DIAGRAM)
+        if (!cancelled && ref.current) {
+          ref.current.innerHTML = svg
+          const svgEl = ref.current.querySelector('svg')
+          if (svgEl) {
+            svgEl.style.maxWidth = '100%'
+            svgEl.style.height = 'auto'
+          }
+        }
+      } catch {
+        if (!cancelled && ref.current) {
+          ref.current.innerHTML = '<p class="text-xs text-[#8888aa] text-center py-4">Diagram loading…</p>'
+        }
+      }
+    }
+    render()
+    return () => { cancelled = true }
+  }, [])
+
+  return (
+    <div className="rounded-xl border border-amber-500/20 bg-[#0e0e16] p-4 overflow-x-auto">
+      <p className="text-[10px] font-semibold text-amber-400/70 uppercase tracking-widest mb-3 text-center">
+        End-to-End Pipeline
+      </p>
+      <div ref={ref} className="flex justify-center [&_svg]:max-w-full" />
+    </div>
+  )
 }
 
-const COLOR_MAP: Record<string, string> = {
-  indigo: 'border-indigo-500/30 bg-indigo-500/5',
-  emerald: 'border-emerald-500/30 bg-emerald-500/5',
-  purple: 'border-purple-500/30 bg-purple-500/5',
-  amber: 'border-amber-500/30 bg-amber-500/5',
+const SERVING_CONTENT = (
+  <div className="space-y-3 text-sm text-[#9999bb] leading-relaxed">
+    <p>
+      QLoRA training produces a small <strong className="text-white">PEFT adapter</strong> (~10–50 MB) —
+      not a full model copy. Register it in a model registry with a version tag (e.g.{' '}
+      <code className="text-cyan-300 text-xs">survey-classifier-v1.0</code>) and deploy to{' '}
+      <strong className="text-cyan-300">vLLM</strong> alongside the base weights.
+    </p>
+
+    <div className="rounded-lg border border-cyan-500/20 bg-[#0a0a12] p-3 space-y-2">
+      <p className="text-xs text-cyan-300 font-semibold">vLLM LoRA serving (per-request, minimal overhead)</p>
+      <pre className="text-[10px] font-mono text-[#8888aa] overflow-x-auto leading-relaxed">
+{`# Start OpenAI-compatible server with adapters
+vllm serve meta-llama/Llama-3-8B-Instruct \\
+  --enable-lora \\
+  --lora-modules survey-v1=/registry/survey-classifier-v1 \\
+               survey-v2=/registry/survey-classifier-v2
+
+# Per-request: select adapter by name + version ID
+LoRARequest("survey-v1", adapter_id=1, path="/registry/...")`}
+      </pre>
+      <ul className="space-y-1 text-xs">
+        {[
+          'Multiple adapter versions coexist — swap or rollback without redeploying the base model',
+          'GET /models lists base model + all mounted LoRA modules',
+          'Classification requests pass lora_request; Orchestrator/RAG/Summary routes use base model unchanged',
+        ].map(item => (
+          <li key={item} className="flex gap-2">
+            <ArrowRight className="w-3 h-3 text-cyan-400 shrink-0 mt-0.5" />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <p className="text-xs">
+      MiniSense routes classification through the existing OpenAI-compatible abstraction (
+      <code className="text-cyan-300">providers/llm.py</code>) — point one endpoint at vLLM,
+      keep Groq/Gemini for all other agents.
+    </p>
+
+    <ol className="space-y-1.5 text-xs list-none">
+      {[
+        'A/B: route 5–10% traffic to survey-v1 adapter vs GPT-4o baseline',
+        'Monitor Macro F1, latency (p50/p95), and error rate in production',
+        'Promote survey-v2 adapter when it beats v1 on eval — old adapter stays mounted for instant rollback',
+        'Ramp to 100% over 1–2 weeks; rollback = change routing weight, not redeploy',
+      ].map((step, i) => (
+        <li key={i} className="flex gap-2">
+          <span className="text-cyan-400 font-mono shrink-0">{i + 1}.</span>
+          {step}
+        </li>
+      ))}
+    </ol>
+  </div>
+)
+
+const SECTIONS = [
+  {
+    id: 'data',
+    num: 1,
+    title: 'Data Strategy',
+    icon: Database,
+    color: 'emerald',
+    content: (
+      <div className="space-y-3 text-sm text-[#9999bb] leading-relaxed">
+        <p>
+          <strong className="text-white">Problem:</strong> omniSense processes ~10,000 free-text survey responses/day.
+          Each must be classified into one of <strong className="text-emerald-300">8 sentiment + topic categories</strong>.
+        </p>
+        <ol className="space-y-2 list-none">
+          {[
+            'Sample historical responses (stratified by channel, rating, and length).',
+            'Use GPT-4o or Gemini as a labeler with a strict 8-class prompt and 2–3 few-shot examples per class.',
+            'Human review on 10–15% of labels — focus on ambiguous or multi-topic responses.',
+            'Balance classes via oversampling underrepresented categories; drop noisy or contradictory labels.',
+            'Store as JSONL: { "input": "<free_text>", "output": "<category>", "metadata": {...} }.',
+          ].map((step, i) => (
+            <li key={i} className="flex gap-2">
+              <span className="text-emerald-400 font-mono text-xs shrink-0">{i + 1}.</span>
+              <span>{step}</span>
+            </li>
+          ))}
+        </ol>
+        <p className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2 text-xs text-emerald-300">
+          <strong>Estimate:</strong> 20k–50k labelled examples sufficient for a strong initial classifier.
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'model',
+    num: 2,
+    title: 'Model & Technique Selection',
+    icon: Cpu,
+    color: 'amber',
+    content: (
+      <div className="space-y-3 text-sm text-[#9999bb] leading-relaxed">
+        <p>
+          <strong className="text-white">Base model:</strong>{' '}
+          <span className="text-amber-300">Llama 3 8B Instruct</span> (primary).
+          <span className="text-[#8888aa]"> Mistral 7B Instruct</span> as alternative if already in the serving stack.
+        </p>
+        <p>
+          <strong className="text-white">Technique:</strong>{' '}
+          <span className="text-amber-300">QLoRA</span> — NF4 quantization + PEFT LoRA adapters.
+          Strong quality at a fraction of full fine-tuning GPU cost; ideal for fixed 8-class classification.
+        </p>
+        <ul className="space-y-1.5 text-xs">
+          {[
+            'NF4 (bitsandbytes) — train on a single 24GB GPU',
+            'PEFT adapter ~10–50 MB — version, store, and hot-swap independently of base weights',
+            'Full FT rejected: 4× GPU cost, harder rollback, overkill for classification',
+          ].map(item => (
+            <li key={item} className="flex gap-2">
+              <ArrowRight className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+    ),
+  },
+  {
+    id: 'pipeline',
+    num: 3,
+    title: 'Training Pipeline',
+    icon: GitBranch,
+    color: 'indigo',
+    content: (
+      <div className="space-y-3 text-sm text-[#9999bb] leading-relaxed">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs font-mono">
+          {['Dataset', 'Train/Val/Test Split', 'QLoRA Training', 'Evaluation', 'Model Registry'].map((step, i, arr) => (
+            <span key={step} className="flex items-center gap-1.5">
+              <span className="px-2 py-1 rounded border border-indigo-500/30 bg-indigo-500/10 text-indigo-300">{step}</span>
+              {i < arr.length - 1 && <ArrowRight className="w-3 h-3 text-[#5555777]" />}
+            </span>
+          ))}
+        </div>
+        <p>
+          <strong className="text-white">Tooling:</strong> Hugging Face{' '}
+          <code className="text-indigo-300 text-xs">datasets</code>,{' '}
+          <code className="text-indigo-300 text-xs">transformers</code>,{' '}
+          <code className="text-indigo-300 text-xs">peft</code>,{' '}
+          <code className="text-indigo-300 text-xs">trl</code> (SFTTrainer).
+        </p>
+        <p className="text-xs">
+          80/10/10 split. Train 2–3 epochs, early stop on validation Macro F1.
+          Export adapter to registry as <code className="text-indigo-300">survey-classifier-vX</code> — ready for vLLM mount.
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'eval',
+    num: 4,
+    title: 'Evaluation',
+    icon: BarChart2,
+    color: 'purple',
+    content: (
+      <div className="space-y-3 text-sm text-[#9999bb] leading-relaxed">
+        <div className="flex flex-wrap gap-1.5">
+          {['Accuracy', 'Precision', 'Recall', 'F1', 'Macro F1'].map(m => (
+            <span key={m} className="text-[10px] px-2 py-0.5 rounded border border-purple-500/25 bg-purple-500/10 text-purple-300 font-mono">{m}</span>
+          ))}
+        </div>
+        <ul className="space-y-1.5 text-xs">
+          {[
+            'Primary gate: Macro F1 on held-out human-labelled test set',
+            'Compare against GPT-4o labels on the same test set (within ~2–3 pts Macro F1)',
+            'Per-class precision/recall + confusion matrix',
+            'Track cost per 10k responses and p50/p95 latency vs frontier model',
+          ].map(item => (
+            <li key={item} className="flex gap-2">
+              <ArrowRight className="w-3 h-3 text-purple-400 shrink-0 mt-0.5" />
+              {item}
+            </li>
+          ))}
+        </ul>
+        <p className="rounded-lg border border-purple-500/20 bg-purple-500/5 px-3 py-2 text-xs text-purple-300">
+          <strong>Production-ready when:</strong> quality ≈ GPT-4o at 10–20× lower inference cost.
+        </p>
+      </div>
+    ),
+  },
+  {
+    id: 'serving',
+    num: 5,
+    title: 'Serving',
+    icon: Server,
+    color: 'cyan',
+    content: SERVING_CONTENT,
+  },
+  {
+    id: 'future',
+    num: 6,
+    title: 'Future Proofing',
+    icon: Layers,
+    color: 'rose',
+    content: (
+      <div className="space-y-3 text-sm text-[#9999bb] leading-relaxed">
+        <p>All training data follows a <strong className="text-white">domain-agnostic schema</strong>:</p>
+        <pre className="rounded-lg border border-[#2a2a3a] bg-[#0e0e16] p-3 text-xs font-mono text-rose-300 overflow-x-auto">
+{`{ "input": "<free_text>", "output": "<category>", "metadata": {...} }`}
+        </pre>
+        <p className="text-xs">
+          Label set is config-driven (YAML/JSON). Same pipeline works for restaurants, telecom, healthcare,
+          e-commerce, and support — only categories and labeler prompt change. Training and serving never
+          depend on a specific survey schema.
+        </p>
+      </div>
+    ),
+  },
+]
+
+const COLOR: Record<string, string> = {
+  emerald: 'border-emerald-500/25 bg-emerald-500/5',
+  amber: 'border-amber-500/25 bg-amber-500/5',
+  indigo: 'border-indigo-500/25 bg-indigo-500/5',
+  purple: 'border-purple-500/25 bg-purple-500/5',
+  cyan: 'border-cyan-500/25 bg-cyan-500/5',
+  rose: 'border-rose-500/25 bg-rose-500/5',
 }
-const ICON_COLOR: Record<string, string> = {
-  indigo: 'text-indigo-400',
-  emerald: 'text-emerald-400',
-  purple: 'text-purple-400',
-  amber: 'text-amber-400',
+const ICON: Record<string, string> = {
+  emerald: 'text-emerald-400', amber: 'text-amber-400', indigo: 'text-indigo-400',
+  purple: 'text-purple-400', cyan: 'text-cyan-400', rose: 'text-rose-400',
 }
 
 export function FineTuning() {
   return (
-    <div className="p-6 max-w-5xl space-y-8 animate-fade-in">
+    <div className="p-6 max-w-3xl space-y-6 animate-fade-in">
 
-      {/* Header */}
-      <div className="rounded-2xl border border-amber-500/25 bg-gradient-to-br from-amber-500/5 to-[#12121a] p-6">
+      <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-[#12121a] p-6">
         <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center flex-shrink-0">
-            <Cpu className="w-6 h-6 text-amber-400" />
+          <div className="w-11 h-11 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
+            <Tag className="w-5 h-5 text-amber-400" />
           </div>
           <div>
-            <h1 className="text-xl font-black text-white tracking-tight">Fine-Tuning Use Case</h1>
-            <p className="text-amber-400/80 text-sm font-medium mt-0.5">Domain adaptation for GreenLeaf Bistro customer intelligence</p>
-            <p className="text-sm text-[#9999bb] leading-relaxed mt-2 max-w-2xl">
-              MiniSense currently uses general-purpose LLMs (Groq / Gemini) for theme classification, narrative generation, and FAQ answering.
-              Fine-tuning a smaller model on domain-specific data would deliver higher accuracy, lower latency, reduced API costs, and brand-consistent outputs.
-              This page outlines the full fine-tuning strategy as it applies to this platform.
+            <p className="text-[10px] font-semibold text-amber-400/70 uppercase tracking-widest mb-1">Part 3 — Assignment</p>
+            <h1 className="text-lg font-black text-white">Fine-Tuning Design</h1>
+            <p className="text-sm text-[#9999bb] mt-1.5 leading-relaxed">
+              Classify 10,000 survey responses/day into 8 sentiment + topic categories —
+              replacing GPT-4o at scale with a cost-efficient fine-tuned model.
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2 mt-4">
-          {['LoRA', 'QLoRA', 'Llama-3', 'Mistral-7B', 'PEFT', 'Hugging Face', 'XTTS v2', 'Supervised Fine-Tuning'].map(t => (
-            <span key={t} className="text-[10px] px-2 py-0.5 rounded border border-amber-500/25 bg-amber-500/10 text-amber-400 font-medium">{t}</span>
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {CATEGORIES.map(c => (
+            <span key={c} className="text-[10px] px-2 py-0.5 rounded border border-amber-500/20 bg-amber-500/8 text-amber-300/80">{c}</span>
           ))}
         </div>
       </div>
 
-      {/* Why Fine-Tune */}
-      <div>
-        <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 text-amber-400" />
-          Why Fine-Tune Instead of Prompting?
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { icon: Target, color: 'amber', title: 'Domain Vocabulary', desc: 'General LLMs misclassify restaurant-domain terminology. Fine-tuning embeds GreenLeaf-specific jargon, menu items, and service concepts.' },
-            { icon: Zap, color: 'emerald', title: 'Latency & Cost', desc: 'A fine-tuned 7B model runs locally on GPU with ~50ms latency and zero API cost — vs 300ms+ and per-token charges for cloud LLMs.' },
-            { icon: Layers, color: 'indigo', title: 'Consistency', desc: 'Prompt engineering produces variable outputs. Fine-tuning locks in tone, format, and citation style — critical for automated executive reports.' },
-          ].map(({ icon: Icon, color, title, desc }) => (
-            <div key={title} className={cn('rounded-xl border p-4', COLOR_MAP[color])}>
-              <div className="flex items-center gap-2 mb-2">
-                <Icon className={cn('w-4 h-4', ICON_COLOR[color])} />
-                <span className="text-sm font-semibold text-white">{title}</span>
-              </div>
-              <p className="text-xs text-[#9999bb] leading-relaxed">{desc}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+      <PipelineDiagram />
 
-      {/* Pipeline Diagram */}
-      <div>
-        <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-          <Database className="w-4 h-4 text-indigo-400" />
-          Fine-Tuning Pipeline
-        </h2>
-        <div className="rounded-xl border border-[#2a2a3a] bg-[#0e0e16] p-4">
-          <MermaidChart id="ft-pipeline" chart={PIPELINE_DIAGRAM} />
-        </div>
-      </div>
-
-      {/* Training Tasks */}
-      <div>
-        <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-          <Layers className="w-4 h-4 text-purple-400" />
-          Training Tasks
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {TRAINING_TASKS.map(({ icon: Icon, color, title, desc, data }) => (
-            <div key={title} className={cn('rounded-xl border p-5 space-y-3', COLOR_MAP[color])}>
-              <div className="flex items-start gap-3">
-                <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', `bg-${color}-500/15 border border-${color}-500/30`)}>
-                  <Icon className={cn('w-4 h-4', ICON_COLOR[color])} />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-white">{title}</p>
-                  <p className="text-xs text-[#9999bb] leading-relaxed mt-1">{desc}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-xs text-[#7777aa] border-t border-[#2a2a3a] pt-2">
-                <Database className="w-3 h-3 flex-shrink-0" />
-                <span>{data}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Technical Approach */}
-      <div>
-        <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-          <Cpu className="w-4 h-4 text-emerald-400" />
-          Technical Approach
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="rounded-xl border border-[#2a2a3a] bg-[#12121a] p-5 space-y-3">
-            <p className="text-sm font-semibold text-white">Method: QLoRA (4-bit)</p>
-            <div className="space-y-2 text-xs text-[#9999bb]">
-              {[
-                'Base model: Llama-3-8B-Instruct or Mistral-7B-v0.3',
-                'Quantization: bitsandbytes 4-bit NF4',
-                'Adapter rank: r=16, alpha=32, dropout=0.05',
-                'Target modules: q_proj, v_proj, k_proj, o_proj',
-                'Training: 3 epochs, lr=2e-4, batch=4, grad_accum=4',
-                'Hardware: Single A100 40GB or RTX 4090 (~4h)',
-              ].map(l => (
-                <div key={l} className="flex items-start gap-2">
-                  <ArrowRight className="w-3 h-3 text-emerald-400 flex-shrink-0 mt-0.5" />
-                  <span>{l}</span>
-                </div>
-              ))}
-            </div>
+      {SECTIONS.map(({ id, num, title, icon: Icon, color, content }) => (
+        <div key={id} className={cn('rounded-xl border p-5', COLOR[color])}>
+          <div className="flex items-center gap-2.5 mb-4">
+            <span className="w-6 h-6 rounded-full bg-[#1a1a26] border border-[#2a2a3a] flex items-center justify-center text-xs font-bold text-[#8888aa]">{num}</span>
+            <Icon className={cn('w-4 h-4', ICON[color])} />
+            <h2 className="text-sm font-bold text-white">{title}</h2>
           </div>
-          <div className="rounded-xl border border-[#2a2a3a] bg-[#12121a] p-5 space-y-3">
-            <p className="text-sm font-semibold text-white">Serving: vLLM + KServe</p>
-            <div className="space-y-2 text-xs text-[#9999bb]">
-              {[
-                'Merge LoRA adapter into base weights for production',
-                'Serve via vLLM with tensor parallelism on GPU cluster',
-                'Deploy as KServe InferenceService on Kubernetes',
-                'OpenAI-compatible API endpoint — zero code change in MiniSense',
-                'A/B testing: route 10% traffic to fine-tuned, monitor metrics',
-                'Rollback: revert to cloud LLM if fine-tuned degrades',
-              ].map(l => (
-                <div key={l} className="flex items-start gap-2">
-                  <ArrowRight className="w-3 h-3 text-indigo-400 flex-shrink-0 mt-0.5" />
-                  <span>{l}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          {content}
         </div>
-      </div>
+      ))}
 
-      {/* Performance Comparison */}
-      <div>
-        <h2 className="text-base font-bold text-white mb-4 flex items-center gap-2">
-          <BarChart2 className="w-4 h-4 text-cyan-400" />
-          Expected Performance (Base vs Fine-Tuned)
-        </h2>
-        <div className="rounded-xl border border-[#2a2a3a] bg-[#12121a] overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#2a2a3a] bg-[#0e0e16]">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-[#8888aa] uppercase tracking-wider">Metric</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-[#8888aa] uppercase tracking-wider">Base LLM</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-[#8888aa] uppercase tracking-wider">Fine-Tuned</th>
-                <th className="text-center px-4 py-3 text-xs font-semibold text-[#8888aa] uppercase tracking-wider">Delta</th>
-              </tr>
-            </thead>
-            <tbody>
-              {COMPARISON_ROWS.map((row, i) => (
-                <tr key={i} className={cn('border-b border-[#2a2a3a]/50', i % 2 === 0 ? 'bg-[#12121a]' : 'bg-[#0e0e16]')}>
-                  <td className="px-4 py-3 text-[#ccccdd] text-xs">{row.metric}</td>
-                  <td className="px-4 py-3 text-center text-xs text-[#8888aa] font-mono">{row.base}</td>
-                  <td className="px-4 py-3 text-center text-xs text-emerald-400 font-mono font-semibold">{row.finetuned}</td>
-                  <td className="px-4 py-3 text-center">
-                    {row.delta !== '—' ? (
-                      <span className={cn('text-xs font-mono font-semibold', row.better ? 'text-emerald-400' : 'text-amber-400')}>
-                        {row.better ? <CheckCircle className="w-3 h-3 inline mr-1" /> : null}{row.delta}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-emerald-400 font-semibold">✓ Improved</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="text-xs text-[#6666888] mt-2">* Figures are estimates based on literature benchmarks for similar domain-adaptation tasks. Actual results depend on dataset quality and training configuration.</p>
-      </div>
-
-      {/* Integration with MiniSense */}
-      <div className="rounded-xl border border-indigo-500/25 bg-indigo-500/5 p-5">
-        <h2 className="text-sm font-bold text-white mb-3 flex items-center gap-2">
-          <CheckCircle className="w-4 h-4 text-indigo-400" />
-          Integration with MiniSense (Zero Code Change)
-        </h2>
-        <p className="text-sm text-[#9999bb] leading-relaxed mb-3">
-          MiniSense uses an OpenAI-compatible provider abstraction (<code className="text-indigo-300 text-xs">providers/llm.py</code>).
-          Switching from Groq to a self-hosted fine-tuned model requires only changing the base URL and model name in Admin Center — no agent code changes.
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-          {[
-            { step: '1', label: 'Set base_url to vLLM endpoint', note: 'Admin Center → Provider → Custom' },
-            { step: '2', label: 'Set model to fine-tuned model name', note: 'e.g. greenleaf-llama-3-8b' },
-            { step: '3', label: 'All agents use the fine-tuned model', note: 'DataAgent, RAGAgent, SummaryAgent' },
-          ].map(({ step, label, note }) => (
-            <div key={step} className="rounded-lg border border-indigo-500/20 bg-[#12121a] p-3">
-              <div className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 text-xs font-bold flex items-center justify-center mb-2">{step}</div>
-              <p className="text-white font-medium">{label}</p>
-              <p className="text-[#8888aa] mt-0.5">{note}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-
+      <p className="text-[11px] text-[#5555777] text-center pb-2">
+        Full write-up also in README.md § Part 3 — Fine-Tuning Design
+      </p>
     </div>
   )
 }
