@@ -35,9 +35,9 @@ import time
 import uuid
 
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -216,7 +216,10 @@ def _log_run(question: str, result, latency_ms: int):
         pass
 
 
-# ── Serve React frontend (production build) ───────────────────────────────────
+# ── Serve React frontend (SPA fallback) ──────────────────────────────────────
+# StaticFiles(html=True) only serves index.html for directory requests, NOT for
+# unknown paths like /dashboard. We need an explicit catch-all so that direct
+# URL hits on React Router paths return index.html instead of 404.
 
 _FRONTEND_DIST = os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -224,4 +227,17 @@ _FRONTEND_DIST = os.path.join(
 )
 
 if os.path.isdir(_FRONTEND_DIST):
-    app.mount("/", StaticFiles(directory=_FRONTEND_DIST, html=True), name="frontend")
+    # Serve the assets/ folder and known static files directly
+    app.mount("/assets", StaticFiles(directory=os.path.join(_FRONTEND_DIST, "assets")), name="assets")
+
+    @app.get("/{full_path:path}", include_in_schema=False)
+    async def spa_fallback(full_path: str):
+        # Try to serve an exact file first (favicon, txt files, etc.)
+        candidate = os.path.join(_FRONTEND_DIST, full_path)
+        if os.path.isfile(candidate):
+            return FileResponse(candidate)
+        # For all SPA routes (including /dashboard, /analytics, etc.) serve index.html
+        index = os.path.join(_FRONTEND_DIST, "index.html")
+        if os.path.isfile(index):
+            return FileResponse(index, media_type="text/html")
+        return JSONResponse({"detail": "Not found"}, status_code=404)
