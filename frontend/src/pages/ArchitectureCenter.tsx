@@ -6,98 +6,119 @@ type TabKey = 'system' | 'agents' | 'rag' | 'dataflow' | 'finetuning' | 'stack'
 const DIAGRAMS: Record<string, { title: string; mermaid: string }> = {
   system: {
     title: 'System Architecture',
-    mermaid: `graph TB
-    User["User / API Client"]
-    subgraph Entry["Entry Points"]
-        API["FastAPI\\nPOST /ask\\nGET /stream (SSE)"]
-        CLI["cli.py\\n--question flag"]
+    mermaid: `flowchart TB
+    classDef user fill:#1a2e1a,stroke:#22c55e,color:#86efac
+    classDef entry fill:#1e1a3a,stroke:#6366f1,color:#a5b4fc
+    classDef orch fill:#2d1b4e,stroke:#a855f7,color:#d8b4fe
+    classDef agent fill:#1a1a3a,stroke:#6366f1,color:#c4b5fd
+    classDef data fill:#1e3a5f,stroke:#3b82f6,color:#93c5fd
+
+    U["👤 User"]:::user
+    subgraph Entry["API Layer"]
+        API["FastAPI\n/ask · /stream"]:::entry
+        CLI["cli.py"]:::entry
     end
-    subgraph Core["Core Agent System"]
-        Orch["OrchestratorAgent\\nPlans via LLM function-calling\\nRoutes TaskSpec objects"]
-        subgraph Sub["Sub-Agents"]
-            DA["DataAgent\\nGroq tool-calling loop\\nCSAT, themes, ratings"]
-            RA["RAGAgent\\nFAISS similarity search\\nContext summary"]
-            CA["ComparisonAgent\\nRuns DataAgent x2\\nPeriod deltas"]
-            SA["SummaryAgent\\nNarrative generation"]
-        end
+    subgraph Core["Agent System"]
+        Orch["Orchestrator\nLLM Planner"]:::orch
+        DA["DataAgent\nMetrics + Tools"]:::agent
+        RA["RAGAgent\n2-Stage Retrieval"]:::agent
+        CA["ComparisonAgent\nPeriod Deltas"]:::agent
+        SA["SummaryAgent\nNarrative"]:::agent
     end
     subgraph Data["Data Layer"]
-        JSON["survey_responses.json\\n~195k records Jan-May 2026"]
-        FAISS["FAISS IndexFlatIP\\n384-dim embeddings"]
-        FAQ["faq_document.txt"]
+        JSON["survey_responses.json\n195k records"]:::data
+        FAISS["FAISS Index\n384-dim"]:::data
+        FAQ["FAQ Document\n88 chunks"]:::data
     end
-    User --> API
-    User --> CLI
-    API --> Orch
-    CLI --> Orch
-    Orch -->|TaskSpec| DA
-    Orch -->|TaskSpec| RA
-    Orch -->|TaskSpec| CA
-    Orch --> SA
+    U --> API & CLI
+    API & CLI --> Orch
+    Orch -->|TaskSpec| DA & RA & CA
+    DA & RA & CA --> Orch
+    Orch --> SA --> Orch
     DA --> JSON
-    RA --> FAISS
-    FAISS --> FAQ`,
+    RA --> FAISS --> FAQ`,
   },
   agents: {
     title: 'Agent Communication Protocol',
-    mermaid: `flowchart TD
-    Q["Natural language question"] --> Orch["OrchestratorAgent\\nLLM function-calling plan"]
-    Orch -->|"TaskSpec{agent,intent,filters}"| DA["DataAgent"]
-    Orch -->|"TaskSpec"| RA["RAGAgent"]
-    Orch -->|"TaskSpec"| CA["ComparisonAgent"]
-    DA -->|"DataAgentResult"| Orch
-    RA -->|"RAGAgentResult"| Orch
-    CA -->|"ComparisonAgentResult"| Orch
-    Orch --> SA["SummaryAgent"]
-    SA -->|"SummaryAgentResult"| Orch
-    Orch -->|"FinalAnswer"| User["User"]`,
+    mermaid: `flowchart LR
+    classDef io fill:#1a2e1a,stroke:#22c55e,color:#86efac
+    classDef orch fill:#2d1b4e,stroke:#a855f7,color:#d8b4fe
+    classDef agent fill:#1a1a3a,stroke:#6366f1,color:#c4b5fd
+
+    Q["❓ Question"]:::io --> Orch["Orchestrator"]:::orch
+    Orch -->|TaskSpec| DA["DataAgent"]:::agent
+    Orch -->|TaskSpec| RA["RAGAgent"]:::agent
+    Orch -->|TaskSpec| CA["ComparisonAgent"]:::agent
+    DA -->|DataResult| Orch
+    RA -->|RAGResult| Orch
+    CA -->|CompareResult| Orch
+    Orch --> SA["SummaryAgent"]:::agent
+    SA -->|Narrative| Orch
+    Orch -->|"FinalAnswer"| Ans["✅ Answer"]:::io`,
   },
   rag: {
-    title: 'RAG Pipeline',
+    title: 'RAG Pipeline — 2-Stage Retrieval',
     mermaid: `flowchart LR
-    subgraph Ingest["INGEST"]
-        FAQ["faq_document.txt"] --> Split["Q: boundary split"]
-        Split --> Chunks["59 Q&A chunks"]
-        Chunks --> Embed["all-MiniLM-L6-v2"]
-        Embed --> Norm["L2 Normalize"]
-        Norm --> FAISS["FAISS IndexFlatIP"]
+    classDef doc fill:#1e3a5f,stroke:#3b82f6,color:#93c5fd
+    classDef proc fill:#1a1a3a,stroke:#6366f1,color:#a5b4fc
+    classDef model fill:#2d1b4e,stroke:#a855f7,color:#d8b4fe
+    classDef rerank fill:#3a1a2e,stroke:#ec4899,color:#f9a8d4
+    classDef out fill:#1a2e1a,stroke:#22c55e,color:#86efac
+
+    subgraph Ingest["📥 Ingest (offline)"]
+        F["FAQ Doc"]:::doc --> S["Q/A Split"]:::proc
+        S --> C["88 Chunks"]:::proc
+        C --> E["MiniLM\nEmbedder"]:::model
+        E --> N["L2 Norm"]:::proc
+        N --> I["FAISS\nIndex"]:::doc
     end
-    subgraph Retrieve["RETRIEVE"]
-        Query["Query"] --> EmbQ["Embed query"]
-        EmbQ --> NormQ["L2 Normalize"]
-        NormQ --> Search["FAISS top-k search"]
-        Search --> Results["Ranked chunks"]
-        Results --> Summary["Groq context summary"]
+    subgraph Retrieve["🔍 Retrieve (online)"]
+        Q["Query"]:::out --> EQ["Embed\nQuery"]:::model
+        EQ --> NQ["L2 Norm"]:::proc
+        NQ --> SR["Top-10\nFAISS"]:::doc
+        SR --> CE["Cross-Encoder\nReranker"]:::rerank
+        CE --> R["Top-3\nChunks"]:::out
+        R --> LM["LLM\nSummary"]:::model
     end`,
   },
   dataflow: {
     title: 'Data Flow',
     mermaid: `flowchart LR
-    Gen["generate_data.py\\n~195k records Jan-May 2026"] --> JSON["survey_responses.json"]
-    JSON --> DA["DataAgent\\n_load_responses()\\nlru_cache"]
-    DA --> Tools["data_tools.py\\ncompute_csat()\\nextract_top_themes()\\nrating_distribution()"]
-    Tools --> Filter["filter_by_period(start,end)"]
-    Filter --> Metrics["Typed metrics\\nDataAgentResult"]
-    Metrics --> SA["SummaryAgent\\nNarrative"]`,
+    classDef gen fill:#1a2e1a,stroke:#22c55e,color:#86efac
+    classDef store fill:#1e3a5f,stroke:#3b82f6,color:#93c5fd
+    classDef proc fill:#1a1a3a,stroke:#6366f1,color:#a5b4fc
+    classDef out fill:#2d1b4e,stroke:#a855f7,color:#d8b4fe
+
+    Gen["generate_data.py\n195k records"]:::gen --> JSON["survey_responses.json"]:::store
+    JSON --> DA["DataAgent\nlru_cache"]:::proc
+    DA --> Tools["data_tools.py\ncsat · themes · ratings"]:::proc
+    Tools --> Filter["filter_by_period()"]:::proc
+    Filter --> Metrics["DataAgentResult\nTyped schema"]:::out
+    Metrics --> SA["SummaryAgent\nNarrative"]:::out`,
   },
   finetuning: {
     title: 'Fine-Tuning Design',
-    mermaid: `flowchart TB
-    subgraph Pipeline["Data Pipeline"]
-        Raw["10k responses/day"] --> Labeler["GPT-4o labeler"]
-        Labeler --> Spot["Human spot-check 10-15%"]
-        Spot --> Aug["Back-translation augment"]
-        Aug --> Dataset["4k labeled examples"]
+    mermaid: `flowchart LR
+    classDef raw fill:#1e3a5f,stroke:#3b82f6,color:#93c5fd
+    classDef proc fill:#1a1a3a,stroke:#6366f1,color:#a5b4fc
+    classDef model fill:#2d1b4e,stroke:#a855f7,color:#d8b4fe
+    classDef out fill:#1a2e1a,stroke:#22c55e,color:#86efac
+
+    subgraph Pipeline["📊 Data Pipeline"]
+        Raw["Raw Data\n10k/day"]:::raw --> Lab["GPT-4o\nLabeler"]:::model
+        Lab --> Spot["Human\nReview 15%"]:::proc
+        Spot --> Aug["Augment\nBack-translate"]:::proc
+        Aug --> DS["4k Labeled\nExamples"]:::out
     end
-    subgraph Training["Training"]
-        Dataset --> Base["Mistral-7B or Flan-T5"]
-        Base --> LoRA["LoRA r=8 alpha=16"]
-        LoRA --> Eval["macro-F1 >= 0.90"]
-        Eval -->|Pass| Ready["Adapter v1.0"]
+    subgraph Training["🏋️ Training"]
+        DS --> Base["Mistral-7B\nor Flan-T5"]:::model
+        Base --> LoRA["LoRA\nr=8 α=16"]:::proc
+        LoRA --> Ev["F1 ≥ 0.90\nEval"]:::proc
+        Ev -->|Pass| Adapter["Adapter v1.0"]:::out
     end
-    subgraph Serving["Serving"]
-        Ready --> vLLM["vLLM + enable-lora"]
-        vLLM --> Routes["Hot-swap zero downtime"]
+    subgraph Serving["🚀 Serving"]
+        Adapter --> vLLM["vLLM\n+ LoRA"]:::model
+        vLLM --> Swap["Hot-swap\nzero downtime"]:::out
     end`,
   },
 }
@@ -136,19 +157,21 @@ export function ArchitectureCenter() {
         const mermaid = (await import('mermaid')).default
         mermaid.initialize({
           startOnLoad: false,
-          theme: 'dark',
+          theme: 'base',
           themeVariables: {
-            background: '#12121a',
-            primaryColor: '#6366f1',
-            primaryTextColor: '#e8e8f0',
+            background: '#0e0e16',
+            primaryColor: '#1a1a3a',
+            primaryTextColor: '#e2e2f0',
             primaryBorderColor: '#6366f1',
-            edgeLabelBackground: '#1a1a26',
-            nodeTextColor: '#e8e8f0',
+            edgeLabelBackground: '#12121a',
+            nodeTextColor: '#e2e2f0',
             lineColor: '#6366f1',
-            secondaryColor: '#1a1a26',
+            secondaryColor: '#12121a',
             tertiaryColor: '#0e0e16',
-            clusterBkg: '#0e0e16',
+            clusterBkg: '#0f0f1a',
             clusterBorder: '#2a2a3a',
+            fontFamily: 'ui-monospace, monospace',
+            fontSize: '13px',
           },
         })
 
