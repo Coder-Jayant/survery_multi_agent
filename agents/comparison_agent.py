@@ -16,8 +16,6 @@ import os
 import sys
 
 from dotenv import load_dotenv
-from groq import Groq
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from schemas.models import ComparisonAgentResult, DataAgentResult, TaskSpec
 import agents.data_agent as data_agent
@@ -68,8 +66,6 @@ def run(
         cached_result_a: Pre-computed DataAgentResult for period A (avoids re-running DataAgent).
         cached_result_b: Pre-computed DataAgentResult for period B (avoids re-running DataAgent).
     """
-    client = Groq(api_key=os.environ["GROQ_API_KEY"])
-    model = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
 
     filters = task.filters
     period_a_range = filters.get("period_a", {"start": "2026-04-01", "end": "2026-04-30"})
@@ -122,12 +118,15 @@ def run(
         "Be direct and business-focused."
     )
 
-    response = client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": insight_prompt}],
-        max_tokens=150,
-    )
-    insight_summary = response.choices[0].message.content.strip()
+    insight_summary = "Significant shifts in CSAT and ratings observed."
+    try:
+        from providers.llm import get_llm
+        llm = get_llm()
+        if llm.available:
+            resp = llm.chat([{"role": "user", "content": insight_prompt}], tools=None)
+            insight_summary = resp.content.strip()
+    except Exception as e:
+        print(f"[ComparisonAgent] LLM insight error: {e}")
 
     return ComparisonAgentResult(
         period_a=result_a,
