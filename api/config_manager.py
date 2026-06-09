@@ -17,9 +17,16 @@ PROMPTS_PATH = os.path.join(ROOT, "config", "prompts.json")
 HISTORY_PATH = os.path.join(ROOT, "config", "run_history.jsonl")
 
 _DEFAULT_CONFIG = {
-    "provider": "groq",
-    "model": "llama-3.3-70b-versatile",
-    "api_keys": {"groq": "", "openai": "", "gemini": "", "anthropic": "", "grok": ""},
+    "provider": os.getenv("LLM_PROVIDER", "openrouter"),
+    "model": os.getenv("LLM_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free"),
+    "api_keys": {
+        "groq": os.getenv("GROQ_API_KEY", ""),
+        "openai": os.getenv("OPENAI_API_KEY", ""),
+        "gemini": os.getenv("GEMINI_API_KEY", ""),
+        "anthropic": os.getenv("ANTHROPIC_API_KEY", ""),
+        "grok": os.getenv("GROK_API_KEY", ""),
+        "openrouter": os.getenv("OPENROUTER_API_KEY", ""),
+    },
     "embedding_model": "all-MiniLM-L6-v2",
     "retrieval": {"top_k": 3, "strategy": "qa_block", "score_threshold": 0.1},
     "active_kb": "default",
