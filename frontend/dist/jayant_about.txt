@@ -1,0 +1,235 @@
+# About Jayant Verma
+
+Jayant Verma is an AI/ML Engineer specializing in Agentic AI, Retrieval-Augmented Generation (RAG), LLM infrastructure, Voice AI, and production AI systems. He has worked as a core member of the AI team at Cyfuture India Pvt. Ltd., where he has designed, built, and deployed enterprise AI solutions used across multiple business domains.
+
+His work focuses on turning AI concepts into production-ready systems rather than building research prototypes. He has extensive hands-on experience with AI platform engineering, multi-agent architectures, LLM deployment, model serving, AI observability, and cloud-native AI infrastructure.
+
+## Professional Experience
+
+### AI/ML Engineer — Cyfuture India Pvt. Ltd.
+
+August 2024 – Present
+
+As part of Cyfuture's AI team, Jayant has worked on:
+
+* Agentic AI platforms
+* Enterprise AI assistants
+* RAG systems
+* Voice AI solutions
+* LLM hosting and serving infrastructure
+* Fine-tuning platforms
+* Kubernetes-based AI deployments
+* GPU infrastructure and optimization
+
+He has contributed to AI products involving customer support automation, intelligent knowledge retrieval, voice agents, autonomous workflows, and enterprise AI platforms.
+
+## Areas of Expertise
+
+### Agentic AI
+
+Jayant has designed and implemented agent-based systems using frameworks such as LangGraph and modern agent orchestration patterns.
+
+His experience includes:
+
+* Multi-agent workflows
+* Tool calling
+* Human-in-the-loop systems
+* Agent memory
+* Agent observability
+* MCP-based integrations
+* Autonomous business workflows
+
+### Retrieval-Augmented Generation (RAG)
+
+He has built production RAG systems involving:
+
+* Vector databases
+* Chunking strategies
+* Hybrid retrieval
+* Metadata filtering
+* Context management
+* Retrieval evaluation
+* Enterprise knowledge bases
+
+He is comfortable discussing retrieval architectures, chunking tradeoffs, embedding models, evaluation techniques, and production challenges.
+
+### LLM Infrastructure
+
+Jayant has worked extensively on deploying and operating large language models in production environments.
+
+Technologies include:
+
+* vLLM
+* KServe
+* Ray Serve
+* Kubernetes
+* Docker
+* GPU infrastructure
+* Distributed inference systems
+
+He has experience serving models such as:
+
+* Llama family
+* GPT-OSS
+* Mistral
+* Whisper
+* BERT-family models
+* Vision-language models
+
+### Voice AI
+
+One of Jayant's major focus areas is conversational Voice AI.
+
+His work includes:
+
+* Telephonic AI agents
+* Whisper ASR
+* Text-to-Speech systems
+* Real-time voice pipelines
+* Asterisk PBX integration
+* Agentic voice workflows
+
+He has built voice systems capable of handling real-time conversations with low latency while integrating retrieval and tool usage.
+
+### Speech & TTS
+
+Jayant has worked on multilingual Text-to-Speech training and fine-tuning systems using XTTS v2.
+
+His experience includes:
+
+* Multilingual speech datasets
+* Indic language processing
+* Text normalization
+* BPE vocabulary extension
+* Distributed training
+* Evaluation pipelines
+* Large-scale TTS experimentation
+
+### AI Platforms
+
+He enjoys building reusable AI platforms that enable multiple teams to deploy, manage, evaluate, and operate AI systems.
+
+His interests include:
+
+* AI platform engineering
+* AI observability
+* Model lifecycle management
+* Evaluation systems
+* Developer tooling
+* Agent infrastructure
+
+## Major Projects
+
+### Enterprise Multi-Agent AI Platform
+
+Built a platform supporting:
+
+* Multi-agent workflows
+* ReAct reasoning
+* Human-in-the-loop controls
+* Persistent state management
+* Real-time streaming
+* Enterprise deployment
+
+### Telephonic Voice AI Agent
+
+Developed a real-time Voice AI system integrating:
+
+* Speech-to-Text
+* LLM reasoning
+* Tool calling
+* Retrieval systems
+* Text-to-Speech
+* Telephony infrastructure
+
+### LLM Infrastructure Platform
+
+Designed and operated production infrastructure for:
+
+* Model serving
+* Fine-tuning
+* Inference optimization
+* GPU utilization
+* Kubernetes deployments
+
+### MiniSense
+
+A multi-agent customer intelligence platform demonstrating:
+
+* Agent orchestration
+* RAG pipelines
+* Survey analytics
+* Explainable AI workflows
+* AI observability
+* Executive insights
+
+## Technical Skills
+
+Programming:
+
+* Python
+* SQL
+* JavaScript
+
+AI & ML:
+
+* LangGraph
+* LangChain
+* RAG
+* Agentic AI
+* LLMOps
+* Prompt Engineering
+* Fine-Tuning
+* Evaluation Systems
+
+Infrastructure:
+
+* Kubernetes
+* Docker
+* Linux
+* FastAPI
+* Ray Serve
+* KServe
+* vLLM
+
+Data & Storage:
+
+* MongoDB
+* FAISS
+* Vector Databases
+* S3-Compatible Storage
+
+Speech:
+
+* Whisper
+* XTTS v2
+* Voice AI Systems
+* Speech Processing
+
+## Career Direction
+
+Jayant is focused on building the next generation of AI systems, especially in:
+
+* Agentic AI
+* Enterprise AI Platforms
+* Voice AI
+* Multimodal AI
+* AI Infrastructure
+* Autonomous Systems
+
+He is particularly interested in roles where he can combine AI engineering, platform architecture, and product thinking to deliver real-world impact.
+
+## Personal Interests
+
+Outside of work, Jayant enjoys cricket, badminton, sketching, technology exploration, and studying emerging AI research and infrastructure systems.
+
+## Links
+
+Portfolio:
+https://jvt.connect-jv-dev.workers.dev/
+
+Email:
+[jayantmailac@gmail.com](mailto:jayantmailac@gmail.com)
+
+Location:
+Noida, India

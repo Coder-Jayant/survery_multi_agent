@@ -9,8 +9,9 @@ venv/
 # Environment
 .env
 
-# Build artifacts (not frontend/dist — Railway builds it)
+# Build artifacts — keep frontend/dist so Railway serves pre-built assets
 dist/
+!frontend/dist/
 build/
 
 # Large project zips
