@@ -137,16 +137,15 @@ def _deterministic_plan(question: str) -> list[dict]:
     return tasks
 
 
-def _plan(question: str) -> tuple[list[dict], str | None]:
+def _plan(question: str) -> list[dict]:
     """
     Ask the LLM to decompose the question into an ordered list of sub-tasks.
-    Returns (tasks, fallback_reason) — fallback_reason is None if LLM succeeded.
+    Falls back to _deterministic_plan() if LLM is unavailable or fails.
     """
     llm = get_llm()
     if not llm.available:
-        reason = "LLM unavailable (missing or invalid API key). Showing deterministic analysis for Apr/May 2026 only."
-        print(f"[orchestrator] {reason}")
-        return _deterministic_plan(question), reason
+        print("[orchestrator] LLM unavailable — using deterministic planner")
+        return _deterministic_plan(question)
 
     today = "2026-06-08"
     system_prompt = (
@@ -176,17 +175,15 @@ def _plan(question: str) -> tuple[list[dict], str | None]:
     )
 
     if not resp.tool_calls:
-        reason = f"LLM returned no tool calls (model: {llm.model}). The model may not support function calling or hit a rate limit. Showing deterministic analysis for Apr/May 2026 only."
-        print(f"[orchestrator] {reason}")
-        return _deterministic_plan(question), reason
+        print("[orchestrator] LLM plan failed — using deterministic fallback")
+        return _deterministic_plan(question)
 
     try:
         plan_data = resp.tool_calls[0]["arguments"]
-        return plan_data["tasks"], None
+        return plan_data["tasks"]
     except Exception as e:
-        reason = f"LLM plan parse error: {e}. Showing deterministic analysis for Apr/May 2026 only."
-        print(f"[orchestrator] {reason}")
-        return _deterministic_plan(question), reason
+        print(f"[orchestrator] Plan parse error ({e}) — using deterministic fallback")
+        return _deterministic_plan(question)
 
 
 def _route(task: TaskSpec, trace_callback=None, period_cache: dict | None = None):
@@ -255,13 +252,8 @@ def ask(question: str, verbose: bool = False, trace_callback=None) -> FinalAnswe
         print(f"   \"{question}\"")
         print(f"{'='*60}")
 
-    # ── Step 1: Generate execution plan ────────────────────────────────────────
-    raw_tasks, fallback_reason = _plan(question)
-
-    # If LLM failed, emit a warning event so the frontend can show a banner
-    if fallback_reason:
-        emit({"type": "llm_warning", "reason": fallback_reason})
-
+    # ── Step 1: Generate execution plan ──────────────────────────────────────
+    raw_tasks = _plan(question)
     emit({"type": "plan", "tasks": [
         {"agent": t["agent"], "intent": t["intent"]} for t in raw_tasks
     ], "count": len(raw_tasks)})
