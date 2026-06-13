@@ -87,3 +87,16 @@ def download_source_zip():
         media_type="application/zip",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
+
+
+@router.get("/readme")
+def get_readme():
+    """Return README.md content as plain text for in-browser preview."""
+    from fastapi.responses import PlainTextResponse
+    readme_path = os.path.join(_ROOT, "README.md")
+    try:
+        with open(readme_path, encoding="utf-8") as f:
+            content = f.read()
+        return PlainTextResponse(content)
+    except FileNotFoundError:
+        return PlainTextResponse("README.md not found.", status_code=404)
