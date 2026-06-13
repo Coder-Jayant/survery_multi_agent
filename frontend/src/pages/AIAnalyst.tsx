@@ -36,12 +36,33 @@ interface TraceStep {
 }
 
 const SUGGESTIONS = [
-  "Show me the weekly CSAT trend across April and May",
-  "Compare April vs May 2026 CSAT",
-  "What does the FAQ say about complaint handling?",
-  "Which theme showed the biggest improvement?",
   "What is the CSAT for mobile users complaining about staff in May?",
-  "Why did ratings drop in May?",
+  "Show me the weekly CSAT trend across April and May",
+  "Compare the top themes and their CSAT between March and May",
+  "Is food quality or wait time causing more dissatisfaction?",
+]
+
+const HELP_QUERIES = [
+  "What is the CSAT for mobile users complaining about staff in May?",
+  "Show me the weekly CSAT trend across April and May.",
+  "Compare the top complaint themes between March and May.",
+  "Is food quality or wait time causing more dissatisfaction?",
+  "What was the average rating for web channel responses in February?",
+  "How did the CSAT change from January to May 2026?",
+  "Which channel has the lowest CSAT for app complaints?",
+  "What does the FAQ say about refund policies for late deliveries?",
+  "Show me the rating distribution for March 2026.",
+  "Did wait time complaints increase in February?",
+  "What is the most frequent complaint theme overall?",
+  "Compare mobile and kiosk CSAT for April.",
+  "What are the top 3 themes for 1-star ratings in May?",
+  "Show me the weekly trend of average ratings in January.",
+  "How do email complaints differ from web complaints in May?",
+  "What does the FAQ mention about the loyalty program?",
+  "Compare January and February average ratings.",
+  "Are cleanliness complaints worse than price complaints?",
+  "Show me the CSAT trend from February to April.",
+  "What is the average rating for staff issues on the mobile app?"
 ]
 
 export function AIAnalyst({ prefill }: { prefill?: string }) {
@@ -60,6 +81,7 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
   const [activeAgents, setActiveAgents] = useState<string[]>([])
   const [doneAgents, setDoneAgents] = useState<string[]>([])
   const [showGraph, setShowGraph] = useState(false)
+  const [showHelp, setShowHelp] = useState(false)
   const latencyStartRef = useRef<number>(0)
   const stopRef = useRef<(() => void) | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -175,12 +197,18 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
         <div className="px-4 py-3 border-b border-[#2a2a3a] flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-indigo-400" />
           <span className="text-sm font-semibold text-white">AI Analyst</span>
-          <span className="text-xs text-[#8888aa] ml-auto">Multi-agent reasoning</span>
+          <span className="text-xs text-[#8888aa] ml-auto hidden sm:inline">Multi-agent reasoning</span>
+          <button
+            onClick={() => setShowHelp(true)}
+            className="ml-auto sm:ml-2 px-2.5 py-1 rounded-md bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 text-xs font-medium transition-colors"
+          >
+            Example Queries
+          </button>
           {messages.length > 0 && !running && (
             <button
               onClick={clearAll}
               title="Clear conversation"
-              className="p-1 rounded-md text-[#8888aa] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+              className="p-1 rounded-md text-[#8888aa] hover:text-red-400 hover:bg-red-500/10 transition-colors ml-1"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -445,6 +473,40 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
           )}
         </div>
       </div>
+
+      {/* Query Library Modal */}
+      {showHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 animate-fade-in backdrop-blur-sm">
+          <div className="bg-[#12121a] border border-[#2a2a3a] rounded-xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col">
+            <div className="px-5 py-4 border-b border-[#2a2a3a] flex items-center justify-between">
+              <div>
+                <h2 className="text-white font-semibold">Query Library</h2>
+                <p className="text-xs text-[#8888aa] mt-0.5">20 examples of complex analytical capabilities</p>
+              </div>
+              <button 
+                onClick={() => setShowHelp(false)} 
+                className="text-[#8888aa] hover:text-white p-1 rounded-md hover:bg-[#2a2a3a] transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-5 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              {HELP_QUERIES.map((q, i) => (
+                <button
+                  key={i}
+                  onClick={() => {
+                    submit(q)
+                    setShowHelp(false)
+                  }}
+                  className="text-left px-3.5 py-3 rounded-lg border border-[#2a2a3a] text-xs leading-relaxed text-[#ccccdd] hover:text-white hover:border-indigo-500/50 bg-[#1a1a26] hover:bg-[#1e1e30] transition-all"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
