@@ -280,22 +280,33 @@ If the selected LLM errors or hits a rate limit:
 
 ---
 
-## Fine-Tuning Design (Part 3 of Assignment)
+## Part 3: Fine-Tuning Design
 
-**Problem:** Classify 10,000 free-text survey responses/day into 8 sentiment+topic categories. GPT-4o costs ~$450–$900/day at scale.
+**Problem Context:** OmniSense processes 10,000 survey responses/day, requiring classification into 8 sentiment+topic categories (e.g., Positive — Food Quality). Using GPT-4o is highly accurate but cost-prohibitive at this scale. 
 
-**Solution:** LoRA fine-tune `flan-t5-base` or `Mistral-7B-Instruct` on ~4,000 GPT-4o-labelled examples.
+To transition from a frontier model to a cost-effective, self-hosted solution, I would implement the following fine-tuning pipeline:
 
-| Step | Decision | Rationale |
-|---|---|---|
-| **Data** | GPT-4o labels 4,000 responses (few-shot), human spot-check 10–15% | Ensures label quality without full manual annotation |
-| **Augmentation** | Back-translation for underrepresented classes | Balances class distribution cheaply |
-| **Model** | `flan-t5-base` (250M) or `Mistral-7B-Instruct` | Fast inference vs unified serving stack trade-off |
-| **Technique** | LoRA (r=8, α=16, dropout=0.1) on attention layers | 95% of full-FT quality at 1–2% trainable params |
-| **Training** | HuggingFace `Trainer` + `PEFT`, 3–5 epochs, cosine LR | ~30 min on single A10G |
-| **Eval** | Macro-F1 ≥ 0.90, no class below F1 0.80; shadow deploy 48h | Class-balanced quality gate before cutover |
-| **Serving** | vLLM with `--enable-lora`, adapter as named module | Hot-swap adapters without base model restart |
-| **Future-proofing** | Config-driven category list (YAML), versioned adapters in object storage | Renaming/adding categories requires no code change |
+### 1. Data Strategy
+**Curation:** I would use "LLM-as-a-Judge" distillation. We route a random sample of production traffic to GPT-4o with a highly engineered few-shot prompt to generate initial labels. Human annotators would spot-check a 10% stratified sample to correct errors and catch edge cases (like sarcasm).  
+**Volume:** For an 8-class problem, we need roughly 500 high-quality examples per class. I would target a dataset of **4,000 to 5,000 labeled examples**. If certain classes (like "Neutral - Staff") are underrepresented, I would oversample or use back-translation augmentation to balance the dataset, preventing minority-class collapse.
+
+### 2. Model & Technique Selection
+**Base Model:** I would choose **Llama-3-8B-Instruct**. It possesses strong baseline reasoning and language comprehension, making it highly capable of nuanced classification out-of-the-box, while being small enough to run on a single commodity GPU (like an L4 or A10G) in production.  
+**Technique:** I would use **QLoRA** (Quantized Low-Rank Adaptation). Full fine-tuning is unnecessary for a classification task and risks catastrophic forgetting of the model's baseline language skills. QLoRA loads the base model in 4-bit precision and trains tiny 16-bit adapters on the attention matrices (`q_proj`, `v_proj`). This achieves ~98% of full fine-tuning performance but requires only 10GB of VRAM to train, drastically reducing compute costs.
+
+### 3. Training Pipeline
+**Tooling:** I would use **Unsloth** for training, as it offers 2x faster LoRA training and significant VRAM savings compared to standard HuggingFace `PEFT`. If a UI-driven approach is preferred for the MLOps team, **Axolotl** is a fantastic declarative alternative.  
+**Structure:** The data would be formatted into ChatML. The training job would run for 3-5 epochs using a cosine learning rate scheduler, a batch size of 16, and an AdamW 8-bit optimizer to save memory. 20% of the data would be held out for validation.
+
+### 4. Evaluation
+**Metrics:** Accuracy is misleading for imbalanced datasets, so the primary metric would be **Macro F1-Score**. I would set a hard gate: the model must achieve a Macro-F1 of ≥ 0.90, with no individual class falling below 0.80.  
+**Cutover Strategy:** Once the offline metrics are hit, I would use **Shadow Deployment**. The fine-tuned model processes live traffic asynchronously without affecting the user, while GPT-4o continues serving the actual response. After 48 hours, if the fine-tuned model's predictions align with GPT-4o >95% of the time, we route 10% of live traffic to it (Canary deployment), eventually scaling to 100%.
+
+### 5. Serving
+I would use **vLLM** with `--enable-lora`. vLLM supports **Multi-LoRA serving**, meaning we load the 8B base model into VRAM exactly once. The fine-tuned classification adapter (which is only ~50MB) is loaded on top. If we later fine-tune a *different* adapter for a different task, vLLM can dynamically route requests to the correct adapter on the fly without duplicating the base model memory.
+
+### 6. Future Proofing
+To ensure the pipeline is agnostic to input changes, the system will decouple the schema from the model. Categories will be defined in an external `categories.yaml` file injected into the system prompt, rather than hardcoding class indices into a classification head. The adapter will output structured JSON. If new categories are added, we simply update the YAML, generate 500 new synthetic examples via GPT-4o, and incrementally train a new LoRA adapter version without changing any infrastructure code.
 
 ---
 
