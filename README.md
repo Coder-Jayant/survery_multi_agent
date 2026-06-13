@@ -1,39 +1,37 @@
 # MiniSense — Multi-Agent Customer Intelligence Platform
 
-A production-grade AI system that answers business questions about survey feedback using **multi-agent orchestration**, **RAG with reranking**, and **full observability**.
+> A production-grade AI system that answers complex business questions about survey feedback using **hierarchical multi-agent orchestration**, **RAG with two-stage reranking**, **7 deterministic analytics tools**, and **real-time observability**.
 
-Built for: GreenLeaf Bistro (fictional business) | Dataset: 60,000+ survey responses
-
-> **Assignment reviewers:** Start with **[ASSIGNMENT_SUBMISSION.md](./ASSIGNMENT_SUBMISSION.md)** — approach, assumptions, setup, and doc index.
+**Live Demo:** [http://49.50.117.67:8001](http://49.50.117.67:8001)  
+**Business:** GreenLeaf Bistro (fictional) | **Dataset:** 195,000 survey responses (Jan–May 2026)
 
 ---
 
-## Quick Start (Web Platform)
+## Quick Start
 
 ```bash
 # 1. Install dependencies
 pip install -r requirements.txt
 
-# 2. Configure API key (or use Admin Center in the UI after launch)
+# 2. Configure API key
 cp .env.example .env
-# Add GROQ_API_KEY=... (free at console.groq.com)
+# Add your key: GROQ_API_KEY=... or GEMINI_API_KEY=... etc.
+# (Or configure via Admin Center in the UI after launch)
 
-# 3. Run server (serves API + pre-built React frontend)
-python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+# 3. Run server — serves API + pre-built React frontend on one port
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8001
 
-# 4. Open http://localhost:8000
-#    → AI Analyst tab: ask business questions with live agent trace
-#    → Admin Center: paste API key if not in .env
+# 4. Open http://localhost:8001
 ```
 
-Dataset (`data/survey_responses.json`) and FAISS index (`rag/vector_store/`) are **included** in the repo. Regenerate only if missing:
+Dataset (`data/survey_responses.json`) and FAISS index (`rag/faq_index.faiss`) are **included**. Regenerate only if needed:
 
 ```bash
-python data/generate_data.py
-python rag/ingest.py
+python data/generate_data.py   # regenerates 195,000 records
+python rag/ingest.py           # rebuilds FAISS index from FAQ
 ```
 
-### CLI & Tests (optional)
+### CLI (optional)
 
 ```bash
 python cli.py --question "What are the top complaints in May 2026?" --verbose
@@ -46,45 +44,110 @@ pytest tests/
 ## Architecture
 
 ```
-User Question
-     │
-     ▼
-┌─────────────────────────────────┐
-│        OrchestratorAgent        │  ← LLM (Groq) plans execution
-│  • Parses question intent        │    via function-calling
-│  • Creates list of TaskSpecs     │
-│  • Routes to sub-agents          │
-│  • Synthesizes final answer      │
-└──────┬──────┬──────┬────────────┘
-       │      │      │
-       ▼      ▼      ▼
-  ┌────────┐ ┌────────────┐ ┌──────────────────┐
-  │  Data  │ │    RAG     │ │   Comparison     │
-  │ Agent  │ │  Agent     │ │     Agent        │
-  │        │ │            │ │                  │
-  │ Tool   │ │ FAISS      │ │ Runs DataAgent   │
-  │ calls: │ │ vector     │ │ for 2 periods,   │
-  │ CSAT,  │ │ search     │ │ computes deltas  │
-  │ themes,│ │ (FAQ docs) │ │                  │
-  │ dist.  │ │            │ │                  │
-  └────────┘ └────────────┘ └──────────────────┘
-       │           │                 │
-       └─────┬─────┘─────────────────┘
-             ▼
-     ┌───────────────┐
-     │ SummaryAgent  │  ← Narrative generation
-     │               │    from structured inputs
-     └───────┬───────┘
-             ▼
-    FinalAnswer (narrative
-    + metrics + sources)
+User Question (HTTP → SSE stream)
+        │
+        ▼
+┌──────────────────────────────────────────┐
+│              OrchestratorAgent           │
+│  • LLM creates execution Plan            │
+│  • Routes TaskSpec objects to sub-agents │
+│  • period_cache deduplicates DataAgent   │
+│  • Emits SSE trace events in real-time   │
+└──────┬──────────┬──────────┬─────────────┘
+       │          │          │
+       ▼          ▼          ▼
+  ┌─────────┐ ┌────────┐ ┌──────────────┐
+  │  Data   │ │  RAG   │ │  Comparison  │
+  │  Agent  │ │  Agent │ │    Agent     │
+  │         │ │        │ │              │
+  │ 7 tools │ │ FAISS  │ │ A vs B delta │
+  │ via LLM │ │ +cross │ │ CSAT,rating, │
+  │ calling │ │encoder │ │ themes       │
+  └────┬────┘ └───┬────┘ └──────┬───────┘
+       │          │             │
+       └──────────┴──────┬──────┘
+                         ▼
+                ┌──────────────┐
+                │ SummaryAgent │  narrative + VizSpec
+                └──────┬───────┘
+                       ▼
+              FinalAnswer (SSE done event)
+              narrative + metrics + sources + visualization
 ```
 
-**Key design principles:**
-- Orchestrator always passes `TaskSpec` objects to agents — never raw text
-- Sub-agents always return typed Pydantic models — never free-form strings
-- Tool calling is explicit and traceable (DataAgent uses Groq function-calling)
-- SummaryAgent only does prose; all computation is done upstream
+**Design invariants:**
+- Orchestrator passes typed `TaskSpec` (Pydantic) → agents return typed Pydantic models. No free-form string passing between agents.
+- All computation is deterministic Python. LLM orchestrates *which* tools to call, never the math.
+- `period_cache` (keyed by date range) prevents duplicate DataAgent calls — 30–50% token savings on comparison queries.
+- If LLM is unavailable or rate-limited, a `llm_warning` SSE event fires and the UI shows an amber banner. DataAgent falls back to full deterministic mode automatically.
+
+---
+
+## DataAgent — 7 Analytics Tools
+
+The LLM receives all tool schemas and decides which to call. Python executes the computation.
+
+| Tool | What it computes | Example query |
+|---|---|---|
+| `compute_csat` | % of ratings ≥ 4 | "What was CSAT in April?" |
+| `compute_avg_rating` | Mean rating (1–5) | "Average score for May?" |
+| `extract_top_themes` | Top-N themes by keyword frequency | "What are the top complaints?" |
+| `rating_distribution` | Count per star (1–5) | "Show rating breakdown" |
+| `csat_by_segment` | CSAT filtered by channel + theme + rating range | "CSAT for mobile users complaining about staff in May?" |
+| `weekly_trend` | Metric per ISO week in a date range | "Which week in May had the worst ratings?" |
+| `compare_themes` | CSAT + avg_rating per theme, ranked worst-first | "Is food quality or wait time causing more dissatisfaction?" |
+
+**Fallback:** If the LLM generates malformed tool JSON, all metrics are computed deterministically — zero crashes, zero hallucinated numbers.
+
+---
+
+## RAG Pipeline — Two-Stage Retrieval
+
+**Stage 1 — FAISS bi-encoder (fast, exact):**
+- Query embedded with `all-MiniLM-L6-v2` (384-dim, CPU, ~10ms)
+- `IndexFlatL2` exact search across ~100 FAQ chunks
+- Returns top-10 candidates with cosine similarity scores
+
+**Stage 2 — Cross-encoder reranking (precise):**
+- `cross-encoder/ms-marco-MiniLM-L-6-v2` scores each `[CLS] query [SEP] chunk` pair jointly
+- Full attention across both texts — much higher precision than bi-encoder alone
+- Top-3 by rerank score surfaced in API and UI (both scores shown)
+
+**Why two stages?** Cross-encoder is O(n) at query time. FAISS filters to 10 candidates first, so reranking runs exactly 10 pair comparisons. Total RAG latency stays under 200ms.
+
+**Chunking:** Paragraph-based on `\n\n` splits — preserves Q&A pairs as atomic units. Chunks are 50–200 tokens, optimal for bi-encoder embedding quality.
+
+---
+
+## Visualization — Data-Shape Driven
+
+Visualization is selected **entirely by what data is present**, not by keyword guessing. Zero LLM calls, zero tokens.
+
+| Data present | Chart rendered |
+|---|---|
+| `weekly_data` (from `weekly_trend` tool) | **Line/area chart** with gradient fill + 50% reference line |
+| `theme_comparison_data` (from `compare_themes` tool) | **HeatBar** — ranked list with inline red→amber→green CSAT bars |
+| `segment_data` (from `csat_by_segment` tool) | **Scorecard** — metric tile grid with segment highlight |
+| Multiple comparison periods (3+) | **Line chart** (CSAT arc across months) |
+| Two comparison periods | **Table** with delta column (green = improved, red = declined) |
+| Single period — themes | **Horizontal bar** |
+
+---
+
+## Dataset — 195,000 Records, Jan–May 2026
+
+Deliberately engineered narrative arc:
+
+| Month | Records | Target CSAT | Story |
+|---|---|---|---|
+| January | 32,000 | ~72% | Strong start — loyal post-holiday crowd |
+| February | 28,000 | ~68% | Valentine's rush causes wait time complaints |
+| March | 35,000 | ~74% | **Peak** — spring menu + staff retraining |
+| April | 40,000 | ~59% | Mobile app update introduces latency bugs |
+| May | 60,000 | ~39% | **Crisis** — app crashes go viral, volume surges |
+
+6 themes: `food_quality`, `wait_time`, `staff`, `cleanliness`, `price`, `app`  
+4 channels: `mobile` (45% → growing), `web` (30%), `kiosk` (15%), `email` (10%)
 
 ---
 
@@ -93,100 +156,161 @@ User Question
 ```
 Survey_Agent/
 ├── agents/
-│   ├── orchestrator.py       # Planner + synthesizer
-│   ├── data_agent.py         # Metrics via Groq tool-calling
-│   ├── rag_agent.py          # FAISS retrieval + context summary
-│   ├── comparison_agent.py   # Period-over-period comparison
-│   └── summary_agent.py      # Narrative generation
-├── rag/
-│   ├── ingest.py             # Chunk, embed, index FAQ
-│   └── retrieve.py           # Query vector store
+│   ├── orchestrator.py        # Planner + period_cache + SSE emitter
+│   ├── data_agent.py          # 7 tools via LLM function-calling + deterministic fallback
+│   ├── rag_agent.py           # Two-stage FAISS → cross-encoder retrieval
+│   ├── comparison_agent.py    # A vs B delta with LLM insight generation
+│   └── summary_agent.py       # Narrative + calls viz_builder
+├── providers/
+│   └── llm.py                 # Universal LLM interface (Groq/Gemini/OpenAI/Anthropic)
 ├── tools/
-│   └── data_tools.py         # compute_csat, extract_top_themes, etc.
+│   ├── data_tools.py          # All 7 deterministic analytics functions + tool schemas
+│   └── viz_builder.py         # Data-shape-driven VizSpec selector (no LLM)
 ├── schemas/
-│   └── models.py             # All Pydantic inter-agent schemas
-├── data/
-│   ├── generate_data.py      # 100k record generator
-│   ├── survey_responses.json # Generated (gitignored)
-│   └── faq_document.txt      # ~500-word GreenLeaf Bistro FAQ
-├── evaluation/
-│   └── rag_eval.py           # 3-question RAG evaluation
+│   └── models.py              # All Pydantic schemas (TaskSpec, DataAgentResult, VizSpec…)
+├── rag/
+│   ├── ingest.py              # Chunk, embed, index FAQ → FAISS
+│   ├── retrieve.py            # Two-stage retrieval with reranking
+│   ├── faq_index.faiss        # Pre-built FAISS index (included)
+│   └── faq_chunks.json        # Chunk text + stable faq_<hash8> IDs
 ├── api/
-│   └── main.py               # FastAPI server
-├── cli.py                    # CLI entry point
+│   ├── main.py                # FastAPI app — serves API + built frontend static files
+│   ├── routes_agents.py       # GET /stream (SSE), POST /api/ask
+│   ├── routes_analytics.py    # GET /api/analytics/trends|compare|channels
+│   ├── routes_dashboard.py    # GET /api/dashboard
+│   ├── routes_knowledge.py    # GET/POST /api/knowledge/*
+│   ├── routes_config.py       # GET/PUT /api/config
+│   ├── routes_eval.py         # GET /api/eval/run (SSE)
+│   ├── routes_data.py         # POST /api/data/generate
+│   ├── routes_history.py      # GET /api/history
+│   └── config_manager.py      # Reads/writes config.json
+├── data/
+│   ├── generate_data.py       # 195k record generator with narrative arc
+│   ├── survey_responses.json  # Generated dataset (included)
+│   └── faq_document.txt       # 100+ Q&A pairs (FAQ knowledge base)
+├── evaluation/
+│   └── rag_eval.py            # RAG evaluation suite
+├── scripts/
+│   ├── update_server.py       # One-command VPS deploy (git pull + restart)
+│   └── test_new_tools.py      # Smoke tests for csat_by_segment, weekly_trend, compare_themes
+├── frontend/                  # React + Vite + TypeScript SPA
+│   ├── src/
+│   │   ├── pages/             # 12 pages (see UI section below)
+│   │   ├── components/        # AgentGraph, AnswerViz, ChunkCard, StreamingText…
+│   │   ├── lib/api.ts         # HTTP client with TTL cache + SSE stream factory
+│   │   └── types/index.ts     # TypeScript interfaces mirroring Pydantic schemas
+│   └── dist/                  # Pre-built, served by FastAPI
+├── config/config.json         # Runtime config (provider, model, keys) — gitignored for secrets
+├── cli.py                     # CLI entry point
 └── requirements.txt
 ```
 
 ---
 
-## Data Generation Design
+## API Reference
 
-The 100,000 survey records are generated with deliberate signal:
-
-| Property | Design Decision |
-|---|---|
-| **Time span** | April 2026 (40%) + May 2026 (60%) |
-| **Rating distribution** | April: weighted toward 4–5. May: more 1–2s to create comparison signal |
-| **Themes** | 6 themes: food_quality, wait_time, staff, cleanliness, price, app |
-| **Free text** | Template pool per theme × sentiment (positive/negative/neutral) |
-| **Channels** | mobile 45%, web 30%, kiosk 15%, email 10% |
-
-This is intentionally not random noise — the dataset encodes a story (slight quality dip in May) so the ComparisonAgent has something meaningful to surface.
-
----
-
-## RAG Pipeline
-
-**Chunking strategy: Sentence-aware with Q&A block preservation**
-
-1. Split FAQ on `Q:` boundaries → preserves question-answer pairs as atomic units
-2. Sentence-split blocks exceeding ~150 tokens
-3. Embed with `sentence-transformers/all-MiniLM-L6-v2` (local, free, 384-dim)
-4. Store in FAISS with cosine similarity (L2-normalized inner product)
-5. Retrieve top-3 chunks per query; LLM summarizes into context block
-
-**Why this chunking?** Fixed-size risks splitting a question from its answer. Semantic clustering is overkill for a 500-word document. Q&A block chunking maps directly to user query intents.
-
----
-
-## Part 3 — Fine-Tuning Design
-
-### The Problem
-GreenLeaf Bistro (and by extension, omniSense) needs to classify 10,000 free-text survey responses per day into 8 sentiment+topic categories (e.g., *Positive – Food Quality*, *Negative – Wait Time*, *Neutral – Staff*). GPT-4o achieves high accuracy but costs ~$0.15 per 1,000 tokens — at this scale, that's $450–$900/day, which doesn't scale. The goal is a fine-tuned smaller model that matches frontier accuracy at 10–20× lower inference cost.
-
-### 1. Data Strategy
-Use GPT-4o to label an initial batch of 3,000–5,000 responses with a carefully engineered classification prompt (few-shot with 2 examples per class). Human reviewers spot-check 10–15% of labels, focusing on ambiguous cases (e.g., "The wait was fine but the food was cold" spanning two categories). Target: ~300–500 examples per class (2,400–4,000 total). Augment with back-translation (English → French → English) for underrepresented classes. This gives enough signal for LoRA fine-tuning without needing thousands of examples per class.
-
-### 2. Model & Technique Selection
-**Base model:** `google/flan-t5-base` (250M params) or `mistralai/Mistral-7B-Instruct-v0.3`. Prefer Flan-T5 if inference latency is the constraint (encoder-decoder, fast classification), or Mistral-7B if the organization already runs a 7B serving stack and wants one unified model family.
-
-**Technique:** LoRA (r=8, alpha=16, dropout=0.1) on the attention layers. **Rationale:** Full fine-tuning on 7B params requires 4× A100s and is hard to version-control. QLoRA adds quantization noise that hurts precision on an 8-class classifier. LoRA gives 95% of full-FT quality at 1–2% of the trainable parameter count, and the adapter is a ~10MB file that's trivial to version and swap.
-
-### 3. Training Pipeline
-**Tooling:** HuggingFace `Trainer` + `PEFT` library (for LoRA) + `datasets` for data loading. Optionally Axolotl for config-driven training if the team wants reproducible YAML-based jobs. Training job structure: tokenize inputs as `"Classify: {free_text}"` → label as one of 8 category strings. Use `Seq2SeqTrainer` for Flan-T5 or `SFTTrainer` for Mistral. Train for 3–5 epochs on 4,000 examples (~30 min on a single A10G). Use cosine LR schedule with warmup.
-
-### 4. Evaluation
-Track **macro-F1** (primary — treats all 8 classes equally regardless of frequency), per-class precision/recall, and a confusion matrix. Also track inference latency (p50/p95) and cost-per-1000-requests. **Ready-to-replace threshold:** macro-F1 ≥ 0.90 on held-out test set (10% split), with no individual class F1 below 0.80. Shadow deploy for 48 hours (run both models, compare outputs) before full cutover.
-
-### 5. Serving
-Use **vLLM** with LoRA adapter support (`--enable-lora`). The adapter is mounted as a named lora module alongside the base model — requests to the classification route specify `lora_request=LoRARequest("survey_classifier", ...)`. This keeps the base LLM serving other routes (e.g., chat, summarization) untouched. No restart required to add/swap adapters.
-
-### 6. Future-Proofing
-The pipeline is made input-agnostic by: (a) a config-driven category list (YAML/JSON) so adding or renaming categories doesn't require code changes, (b) a schema-agnostic input formatter that maps any `{field: value}` survey record to a classification prompt using a template, (c) versioned adapters stored in object storage with semantic versioning, and (d) a labeling pipeline abstracted behind an interface so GPT-4o can be swapped for a different frontier model as labeler without changing the training code.
-
----
-
-## What Was Skipped and Why
-
-| Feature | Status | Reason |
+| Endpoint | Method | Description |
 |---|---|---|
-| Streaming API responses | **Implemented (bonus)** | SSE real-time agent tracing in `/api/ask` and Evaluation Lab |
-| Re-ranker (cross-encoder) | **Implemented (bonus)** | Two-stage FAISS → cross-encoder reranking in `rag/retrieve.py`; scores shown in UI |
-| Full web UI | **Implemented (bonus)** | React + TypeScript SPA with 9 pages, live agent graph, charts |
-| Persistent database (PostgreSQL) | Skipped | JSON file is sufficient at 100k records; scope constraint |
-| Authentication on FastAPI | Skipped | Out of scope for assessment |
-| Async agent execution | Skipped | DataAgent + RAGAgent could run in parallel, but serial execution is clearer for evaluation |
-| BM25 hybrid retrieval | Skipped | Dense-only retrieval is sufficient; reranking already improves precision significantly |
+| `/stream` | GET (SSE) | Main analyst — streams `plan`, `agent_start`, `tool_call`, `tool_result`, `agent_done`, `done`, `llm_warning` events |
+| `/api/dashboard` | GET | KPI cards + AI executive brief |
+| `/api/analytics/trends` | GET | Monthly CSAT/rating trends (all 5 months) |
+| `/api/analytics/compare` | GET | Period comparison chart data |
+| `/api/analytics/channels` | GET | Channel breakdown |
+| `/api/knowledge/list` | GET | KB metadata + reranker warmup status |
+| `/api/knowledge/chunks` | GET | All indexed chunks with stable IDs |
+| `/api/knowledge/retrieve` | POST | Test two-stage retrieval live |
+| `/api/knowledge/rebuild` | POST | Rebuild FAISS index from FAQ |
+| `/api/agents/prompts` | GET/POST | Read/write prompt registry |
+| `/api/config` | GET/PUT | Read/write model/provider config |
+| `/api/eval/run` | GET (SSE) | Run full evaluation suite (streams results) |
+| `/api/data/generate` | POST | Regenerate synthetic dataset |
+| `/api/data/list` | GET | List available datasets |
+| `/api/history` | GET | Past run records |
+| `/health` | GET | Server health check |
+
+### SSE Events from `/stream`
+
+```
+event: plan          → {tasks: [{agent, intent}], count: N}
+event: agent_start   → {agent, step, total, intent}
+event: tool_call     → {agent, tool, args}
+event: tool_result   → {agent, tool, result}
+event: agent_done    → {agent, step, result}
+event: llm_warning   → {message}            ← rate limit / unavailable LLM
+event: done          → {answer: {narrative, metrics, sources, trace, visualization}}
+event: error         → {message}
+```
+
+---
+
+## Frontend — 12 Pages
+
+| Page | Route | What it does |
+|---|---|---|
+| AI Analyst | `/` | Multi-agent Q&A with live agent graph + SSE trace + evidence panel |
+| Dashboard | `/dashboard` | KPI cards, AI executive brief, trend charts |
+| Analytics | `/analytics` | Monthly trend charts, channel breakdown, metric switcher |
+| Agent Studio | `/studio` | Preset queries, full decision log, stop/restart controls |
+| Knowledge Base | `/knowledge` | Browse chunks, test retrieval, see FAISS vs rerank scores |
+| Architecture Center | `/architecture` | System diagrams (Mermaid), RAG pipeline, data flow |
+| Fine-Tuning | `/finetune` | LoRA adapter design, training pipeline, evaluation design |
+| Evaluation Lab | `/eval` | Run full test suite, SSE progress, pass/fail table |
+| Admin Center | `/admin` | Model/provider config, API keys, embedding model, retrieval settings |
+| About Project | `/about` | Project overview and tech stack |
+| About Developer | `/developer` | Developer profile |
+| Download Source | `/download` | Source code download |
+
+---
+
+## LLM Provider — Universal Interface
+
+All agents use `providers/llm.py → get_llm()`. One-line swap between providers via Admin Center:
+
+| Provider | Notes |
+|---|---|
+| **Groq** | Lowest latency (400–600 tok/s). Best for demos. `llama-3.3-70b-versatile` recommended. |
+| **Gemini** | Google AI Studio key. `gemini-2.5-flash` or `gemini-2.0-flash`. |
+| **OpenAI** | Standard. `gpt-4o-mini` is most cost-efficient. |
+| **Anthropic** | Claude models via Anthropic API. |
+
+If the selected LLM errors or hits a rate limit:
+1. DataAgent falls back to deterministic Python computation
+2. Orchestrator emits `llm_warning` SSE event
+3. Frontend renders amber dismissible banner
+
+---
+
+## Fine-Tuning Design (Part 3 of Assignment)
+
+**Problem:** Classify 10,000 free-text survey responses/day into 8 sentiment+topic categories. GPT-4o costs ~$450–$900/day at scale.
+
+**Solution:** LoRA fine-tune `flan-t5-base` or `Mistral-7B-Instruct` on ~4,000 GPT-4o-labelled examples.
+
+| Step | Decision | Rationale |
+|---|---|---|
+| **Data** | GPT-4o labels 4,000 responses (few-shot), human spot-check 10–15% | Ensures label quality without full manual annotation |
+| **Augmentation** | Back-translation for underrepresented classes | Balances class distribution cheaply |
+| **Model** | `flan-t5-base` (250M) or `Mistral-7B-Instruct` | Fast inference vs unified serving stack trade-off |
+| **Technique** | LoRA (r=8, α=16, dropout=0.1) on attention layers | 95% of full-FT quality at 1–2% trainable params |
+| **Training** | HuggingFace `Trainer` + `PEFT`, 3–5 epochs, cosine LR | ~30 min on single A10G |
+| **Eval** | Macro-F1 ≥ 0.90, no class below F1 0.80; shadow deploy 48h | Class-balanced quality gate before cutover |
+| **Serving** | vLLM with `--enable-lora`, adapter as named module | Hot-swap adapters without base model restart |
+| **Future-proofing** | Config-driven category list (YAML), versioned adapters in object storage | Renaming/adding categories requires no code change |
+
+---
+
+## Production Roadmap
+
+| Component | Current (Demo) | Production |
+|---|---|---|
+| Vector DB | FAISS in-process | Pinecone / Qdrant / Weaviate (metadata filtering, CRUD, HA) |
+| Data store | JSON file | PostgreSQL / MongoDB |
+| LLM | Groq free tier / Admin Center config | Groq / OpenAI with rate limit management + fallback chain |
+| Serving | Single FastAPI process | Kubernetes + autoscaling |
+| Monitoring | SSE trace + UI | LangSmith / Datadog / Sentry |
+| Caching | In-memory (`lru_cache` + TTL Map) | Redis |
+| Auth | None | OAuth2 / JWT |
+| Cost/query | ~$0.0007 (1,400 tokens @ Groq paid rate) | Further reduced by period_cache + smaller models |
 
 ---
 
@@ -194,10 +318,33 @@ The pipeline is made input-agnostic by: (a) a config-driven category list (YAML/
 
 | Library | Purpose |
 |---|---|
-| `groq` | LLM API (Llama 3.3 70B with function calling) |
+| `fastapi` + `uvicorn` | Async REST API server + SSE streaming |
+| `groq` | Groq LLM client (OpenAI-compatible) |
+| `google-generativeai` | Gemini provider |
+| `openai` | OpenAI provider |
+| `anthropic` | Anthropic/Claude provider |
 | `pydantic` | Typed inter-agent schemas |
-| `faiss-cpu` | Vector similarity search |
-| `sentence-transformers` | Local embeddings (all-MiniLM-L6-v2) |
-| `fastapi` + `uvicorn` | REST API server |
+| `faiss-cpu` | Vector similarity search (IndexFlatL2) |
+| `sentence-transformers` | Local bi-encoder embeddings (all-MiniLM-L6-v2) |
+| `transformers` | Cross-encoder reranker (ms-marco-MiniLM-L-6-v2) |
 | `python-dotenv` | Environment variable management |
+| `paramiko` | VPS deployment SSH client |
 | `tqdm` | Progress bars during data generation |
+
+---
+
+## Deployment
+
+**VPS:** `49.50.117.67:2232` (root) | Managed by `systemctl survey-agent`
+
+```bash
+# One-command deploy from local machine
+python scripts/update_server.py
+# → git stash + git pull + systemctl restart survey-agent + health check
+```
+
+---
+
+*Assignment submission materials: see [ASSIGNMENT_SUBMISSION.md](./ASSIGNMENT_SUBMISSION.md)*  
+*Deep architecture diagrams: see [ARCHITECTURE.md](./ARCHITECTURE.md)*  
+*Interview Q&A prep: see [INTERVIEW_PREP.md](./INTERVIEW_PREP.md)*

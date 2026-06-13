@@ -1,6 +1,7 @@
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell,
   PieChart, Pie, Legend, ResponsiveContainer,
+  LineChart, Line, Area, AreaChart, CartesianGrid, ReferenceLine,
 } from 'recharts'
 import type { VizSpec } from '@/types'
 
@@ -186,6 +187,148 @@ function TableViz({ viz }: { viz: VizSpec }) {
   )
 }
 
+// ── NEW: Line / Area chart (weekly trend, multi-period arc) ────────────────
+function LineViz({ viz }: { viz: VizSpec }) {
+  const xKey     = viz.x_key ?? 'label'
+  const valueKey = viz.value_key ?? 'value'
+  const unit     = viz.unit ?? ''
+  const color    = (viz.colors?.[0]) ?? '#6366f1'
+
+  // Draw a reference line at 50% CSAT if this is a % chart
+  const showRef = unit === '%'
+
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <AreaChart data={viz.data} margin={{ top: 8, right: 16, left: 8, bottom: 4 }}>
+        <defs>
+          <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%"  stopColor={color} stopOpacity={0.25} />
+            <stop offset="95%" stopColor={color} stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" stroke="#2a2a3a" vertical={false} />
+        <XAxis
+          dataKey={xKey}
+          tick={{ fill: '#8888aa', fontSize: 10 }}
+          axisLine={false}
+          tickLine={false}
+          interval="preserveStartEnd"
+        />
+        <YAxis
+          tick={{ fill: '#8888aa', fontSize: 10 }}
+          axisLine={false}
+          tickLine={false}
+          tickFormatter={(v) => `${v}${unit}`}
+        />
+        <Tooltip
+          content={<CustomTooltip unit={unit} />}
+          cursor={{ stroke: '#4444aa', strokeWidth: 1 }}
+        />
+        {showRef && (
+          <ReferenceLine
+            y={50}
+            stroke="#f59e0b"
+            strokeDasharray="4 4"
+            strokeOpacity={0.5}
+            label={{ value: '50% target', fill: '#f59e0b', fontSize: 9, position: 'insideTopRight' }}
+          />
+        )}
+        <Area
+          type="monotone"
+          dataKey={valueKey}
+          stroke={color}
+          strokeWidth={2}
+          fill="url(#lineGrad)"
+          dot={{ fill: color, r: 3, strokeWidth: 0 }}
+          activeDot={{ r: 5, fill: color, stroke: '#fff', strokeWidth: 1.5 }}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
+  )
+}
+
+// ── NEW: HeatBar — ranked theme list with inline color-coded CSAT bars ─────
+function HeatBarViz({ viz }: { viz: VizSpec }) {
+  const rows    = viz.data
+  const maxCsat = Math.max(...rows.map(r => Number(r.value ?? r.csat ?? 0)), 1)
+
+  return (
+    <div className="space-y-2.5 py-1">
+      {rows.map((row, i) => {
+        const theme  = String(row[viz.x_key ?? 'theme'] ?? '')
+        const csat   = Number(row[viz.value_key ?? 'csat'] ?? 0)
+        const count  = Number(row.count ?? 0)
+        const color  = String(row.color ?? (viz.colors?.[i] ?? '#6366f1'))
+        const pct    = Math.round((csat / maxCsat) * 100)
+
+        return (
+          <div key={i} className="group">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs text-[#ccccdd] font-medium">{theme}</span>
+              <div className="flex items-center gap-2 text-xs">
+                {count > 0 && <span className="text-[#8888aa]">{count.toLocaleString()} resp.</span>}
+                <span className="font-mono font-bold" style={{ color }}>{csat.toFixed(1)}%</span>
+              </div>
+            </div>
+            <div className="h-2 rounded-full bg-[#2a2a3a] overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-700 ease-out"
+                style={{ width: `${pct}%`, background: color }}
+              />
+            </div>
+          </div>
+        )
+      })}
+      <p className="text-[10px] text-[#8888aa] pt-1">Sorted worst CSAT first. Bar length is relative to highest value.</p>
+    </div>
+  )
+}
+
+// ── NEW: Scorecard — segment spotlight with metric tiles ───────────────────
+function ScorecardViz({ viz }: { viz: VizSpec }) {
+  const accentColor = viz.colors?.[0] ?? '#6366f1'
+
+  return (
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      {viz.data.map((row, i) => {
+        const label = String(row[viz.x_key ?? 'label'] ?? '')
+        const value = String(row[viz.value_key ?? 'value'] ?? '')
+        const color = String(row.color ?? (i === 1 ? accentColor : '#ccccdd'))
+        const isAccent = i === 1   // CSAT card gets accent treatment
+
+        return (
+          <div
+            key={i}
+            className={`rounded-lg border p-3 text-center transition-all ${
+              isAccent
+                ? 'border-[#3a3a50] bg-[#1a1a26]'
+                : 'border-[#2a2a3a] bg-[#12121a]'
+            }`}
+          >
+            <p className="text-[10px] text-[#8888aa] uppercase tracking-wider mb-1">{label}</p>
+            <p
+              className="text-sm font-bold leading-tight break-all"
+              style={{ color: row.color ? color : (isAccent ? accentColor : '#ffffff') }}
+            >
+              {value}
+            </p>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Chart type icon ─────────────────────────────────────────────────────────
+function vizIcon(type: string): string {
+  if (type === 'pie')       return '◕'
+  if (type === 'table')     return '⊞'
+  if (type === 'line')      return '〜'
+  if (type === 'heatbar')   return '▦'
+  if (type === 'scorecard') return '◈'
+  return '▬'
+}
+
 // ── Main export ────────────────────────────────────────────────────────────
 export function AnswerViz({ viz }: { viz: VizSpec }) {
   return (
@@ -193,7 +336,7 @@ export function AnswerViz({ viz }: { viz: VizSpec }) {
       {/* Header */}
       <div className="px-4 py-2.5 border-b border-[#2a2a3a] flex items-center gap-2">
         <span className="text-xs font-medium text-[#8888aa] uppercase tracking-wider">
-          {viz.type === 'pie' ? '◕' : viz.type === 'table' ? '⊞' : '▬'}&nbsp; Visualization
+          {vizIcon(viz.type)}&nbsp; Visualization
         </span>
         <span className="text-xs text-[#ccccdd] ml-1">{viz.title}</span>
       </div>
@@ -204,6 +347,9 @@ export function AnswerViz({ viz }: { viz: VizSpec }) {
         {viz.type === 'grouped_bar' && <GroupedBar viz={viz} />}
         {viz.type === 'pie'         && <PieViz viz={viz} />}
         {viz.type === 'table'       && <TableViz viz={viz} />}
+        {viz.type === 'line'        && <LineViz viz={viz} />}
+        {viz.type === 'heatbar'     && <HeatBarViz viz={viz} />}
+        {viz.type === 'scorecard'   && <ScorecardViz viz={viz} />}
       </div>
     </div>
   )

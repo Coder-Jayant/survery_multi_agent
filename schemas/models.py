@@ -62,6 +62,10 @@ class DataAgentResult(BaseModel):
     top_themes: list[ThemeCount]
     rating_distribution: dict[str, int] = Field(..., description="Keys are '1'-'5'")
     tool_trace: list[str] = Field(default_factory=list, description="Log of tool calls made")
+    # Optional rich data from new tools — populated only when those tools were called
+    weekly_data: Optional[list[dict]] = Field(None, description="weekly_trend output: [{week, start_date, end_date, value, count, metric}]")
+    segment_data: Optional[dict] = Field(None, description="csat_by_segment output: {segment, count, csat, avg_rating}")
+    theme_comparison_data: Optional[list[dict]] = Field(None, description="compare_themes output: [{theme, count, csat, avg_rating, percentage_of_total}]")
 
 
 class RAGAgentResult(BaseModel):

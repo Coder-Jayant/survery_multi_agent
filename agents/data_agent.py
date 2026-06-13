@@ -204,4 +204,8 @@ def run(task: TaskSpec, trace_callback=None) -> DataAgentResult:
         top_themes=top_themes,
         rating_distribution={str(k): v for k, v in rating_dist.items()},
         tool_trace=tool_trace,
+        # Populate new optional fields if those tools were called
+        weekly_data=metric_results.get("weekly_trend"),
+        segment_data=metric_results.get("csat_by_segment"),
+        theme_comparison_data=metric_results.get("compare_themes"),
     )

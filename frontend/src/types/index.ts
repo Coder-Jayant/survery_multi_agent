@@ -198,7 +198,7 @@ export interface RunRecord {
 
 // Visualization spec (mirrors backend VizSpec Pydantic model)
 export interface VizSpec {
-  type: 'bar' | 'grouped_bar' | 'pie' | 'table'
+  type: 'bar' | 'grouped_bar' | 'pie' | 'table' | 'line' | 'heatbar' | 'scorecard'
   title: string
   data: Array<Record<string, unknown>>
   x_key?: string
@@ -217,4 +217,3 @@ export type SSEEvent =
   | { type: 'agent_done'; agent: string; step: number; result: Record<string, unknown> }
   | { type: 'done'; answer: { narrative: string; metrics: Record<string, unknown>; sources: string[]; trace: string[]; visualization?: VizSpec | null } }
   | { type: 'error'; message: string }
-  | { type: 'llm_warning'; reason: string }

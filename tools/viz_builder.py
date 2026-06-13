@@ -1,16 +1,19 @@
 """
 tools/viz_builder.py
 --------------------
-Rule-based visualization selector.
+Rule-based, data-shape-driven visualization selector.
 
-Inspects the question + available data to pick the best Recharts-ready
-VizSpec — no LLM call, instant, deterministic, zero hallucination risk.
+Decision priority (data presence beats keyword guessing):
+  1. weekly_data present          → line chart (time series)
+  2. theme_comparison_data present → heatbar (ranked theme comparison)
+  3. segment_data present          → scorecard (single metric spotlight)
+  4. Multiple comparison results   → grouped_bar or table (multi-period)
+  5. Single comparison result      → table with delta column
+  6. Single period + themes        → horizontal bar
+  7. Single period + ratings       → bar (rating dist)
+  8. RAG-only                      → None
 
-Decision priority:
-  1. Explicit user keywords (pie / table / bar chart) → override chart type
-  2. Comparison data present → grouped bar or theme comparison
-  3. Single-period data → bar (themes) or bar (rating distribution)
-  4. RAG-only result → None (narrative is the answer)
+Zero LLM calls. Zero token cost. Data drives everything.
 """
 from __future__ import annotations
 
@@ -19,10 +22,19 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from schemas.models import DataAgentResult, ComparisonAgentResult, VizSpec
 
-# Consistent palette matching the frontend UI
-THEME_COLORS = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#a855f7", "#3b82f6", "#ec4899"]
+THEME_COLORS  = ["#6366f1", "#22c55e", "#f59e0b", "#ef4444", "#a855f7", "#3b82f6", "#ec4899"]
 PERIOD_COLORS = ["#6366f1", "#22c55e"]
-RATING_COLORS = ["#ef4444", "#f97316", "#f59e0b", "#84cc16", "#22c55e"]  # 1→5 red→green
+RATING_COLORS = ["#ef4444", "#f97316", "#f59e0b", "#84cc16", "#22c55e"]
+LINE_GRADIENT = ["#6366f1"]
+
+
+def _csat_color(csat: float) -> str:
+    """Return a hex color on a red→amber→green gradient for a CSAT value."""
+    if csat >= 60:
+        return "#22c55e"
+    if csat >= 40:
+        return "#f59e0b"
+    return "#ef4444"
 
 
 def build_visualization(
@@ -33,41 +45,94 @@ def build_visualization(
 ):
     """
     Return a VizSpec or None.
-
-    Args:
-        question:               Original user question (used for keyword detection)
-        data_result:            DataAgentResult | None
-        comparison_result:      Most recent ComparisonAgentResult | None
-        all_comparison_results: list[ComparisonAgentResult] | None
+    Inspection order: new rich tool data first, then comparison, then single period.
     """
     try:
         from schemas.models import VizSpec
     except ImportError:
         return None
 
-    q = question.lower()
+    # ── BRANCH 1: weekly_data present → line chart ────────────────────────────
+    # Triggered when data_agent called weekly_trend tool. Highest priority.
+    if data_result and data_result.weekly_data:
+        weeks = data_result.weekly_data
+        metric = weeks[0].get("metric", "csat") if weeks else "csat"
+        unit   = "%" if metric in ("csat", "avg_rating") else "responses"
+        label  = "CSAT" if metric == "csat" else ("Avg Rating" if metric == "avg_rating" else "Responses")
+        period = data_result.period_label
 
-    # ── Keyword signals ───────────────────────────────────────────────────────
-    force_pie   = any(w in q for w in ["pie", "donut"])
-    force_table = any(w in q for w in ["table", "tabular", "tabulate", "list all", "show all"])
-    force_bar   = any(w in q for w in ["bar chart", "bar graph", "histogram"])
-    wants_themes = any(w in q for w in ["theme", "complaint", "issue", "topic", "area"])
-    wants_rating = any(w in q for w in ["rating", "distribution", "star", "score breakdown"])
-    wants_viz   = any(w in q for w in [
-        "chart", "graph", "visual", "plot", "show", "draw",
-        "breakdown", "compare", "comparison", "distribute",
-    ])
+        return VizSpec(
+            type="line",
+            title=f"Weekly {label} Trend — {period}",
+            data=[
+                {
+                    "week": w["week"],
+                    "label": w["start_date"][5:],   # "MM-DD" for compact x-axis
+                    "value": round(w["value"], 2),
+                    "count": w["count"],
+                }
+                for w in weeks
+            ],
+            x_key="label",
+            value_key="value",
+            unit=unit,
+            colors=LINE_GRADIENT,
+        )
 
-    # ── Pick best comparison ──────────────────────────────────────────────────
-    best_comp = None
-    if all_comparison_results:
-        best_comp = all_comparison_results[-1]
-    elif comparison_result:
-        best_comp = comparison_result
+    # ── BRANCH 2: theme_comparison_data → heatbar ─────────────────────────────
+    # Triggered when data_agent called compare_themes tool.
+    if data_result and data_result.theme_comparison_data:
+        rows = data_result.theme_comparison_data   # already sorted worst CSAT first
+        period = data_result.period_label
 
-    # ── BRANCH 0: Multiple comparison results → timeline chart ───────────────
+        return VizSpec(
+            type="heatbar",
+            title=f"Theme CSAT Ranking — {period}",
+            data=[
+                {
+                    "theme": r["theme"].replace("_", " ").title(),
+                    "csat":  round(r["csat"], 1),
+                    "count": r["count"],
+                    "avg_rating": round(r["avg_rating"], 2),
+                    "color": _csat_color(r["csat"]),
+                }
+                for r in rows
+            ],
+            x_key="theme",
+            value_key="csat",
+            unit="%",
+            colors=[_csat_color(r["csat"]) for r in rows],
+        )
+
+    # ── BRANCH 3: segment_data → scorecard ────────────────────────────────────
+    # Triggered when data_agent called csat_by_segment tool.
+    if data_result and data_result.segment_data:
+        seg = data_result.segment_data
+        segment_info = seg.get("segment", {})
+        parts = [v for v in segment_info.values() if v is not None]
+        seg_label = " + ".join(str(p) for p in parts) if parts else "Segment"
+        period = data_result.period_label
+
+        return VizSpec(
+            type="scorecard",
+            title=f"Segment Analysis — {period}",
+            data=[
+                {"label": "Segment", "value": seg_label},
+                {"label": "CSAT",    "value": f"{seg.get('csat', 0):.1f}%",
+                 "color": _csat_color(seg.get("csat", 0))},
+                {"label": "Avg Rating", "value": f"{seg.get('avg_rating', 0):.2f} / 5"},
+                {"label": "Responses",  "value": f"{seg.get('count', 0):,}"},
+                # Overall CSAT for context delta
+                {"label": "Overall CSAT", "value": f"{data_result.csat_score:.1f}%"},
+            ],
+            x_key="label",
+            value_key="value",
+            unit="%",
+            colors=[_csat_color(seg.get("csat", 0))],
+        )
+
+    # ── BRANCH 4: multiple comparison results → period trend bar ──────────────
     if all_comparison_results and len(all_comparison_results) > 1:
-        # Reconstruct ordered unique periods from all comparisons
         seen: set = set()
         periods = []
         for comp in all_comparison_results:
@@ -76,211 +141,114 @@ def build_visualization(
                     periods.append(period)
                     seen.add(period.period_label)
 
-        if force_table:
-            rows = []
-            for p in periods:
-                rows.append({
-                    "Period": p.period_label,
-                    "CSAT": f"{p.csat_score}%",
-                    "Avg Rating": f"{p.avg_rating:.2f}/5",
-                    "Responses": f"{p.total_responses:,}",
-                })
+        # If 3+ distinct periods → line is better than bar
+        if len(periods) >= 3:
             return VizSpec(
-                type="table",
-                title=f"Multi-Period Comparison ({periods[0].period_label} → {periods[-1].period_label})",
-                data=rows,
-                x_key="Period",
-                y_keys=["CSAT", "Avg Rating", "Responses"],
-                colors=[],
-            )
-
-        if force_pie:
-            # Pie of CSAT across periods
-            return VizSpec(
-                type="pie",
-                title=f"CSAT Distribution Across Periods",
-                data=[{"name": p.period_label, "value": p.csat_score} for p in periods],
-                x_key="name",
+                type="line",
+                title=f"CSAT Trend: {periods[0].period_label} → {periods[-1].period_label}",
+                data=[
+                    {
+                        "label": p.period_label,
+                        "value": p.csat_score,
+                        "count": p.total_responses,
+                    }
+                    for p in periods
+                ],
+                x_key="label",
                 value_key="value",
                 unit="%",
-                colors=THEME_COLORS,
+                colors=LINE_GRADIENT,
             )
 
-        # Default: bar chart of CSAT per period
+        # 2 periods → table with delta
+        a, b = periods[0], periods[1]
+        best_comp = all_comparison_results[-1]
         return VizSpec(
-            type="bar",
-            title=f"CSAT Trend: {periods[0].period_label} → {periods[-1].period_label}",
-            data=[{"period": p.period_label, "csat": p.csat_score, "rating": round(p.avg_rating, 2)}
-                  for p in periods],
-            x_key="period",
-            value_key="csat",
-            unit="%",
-            colors=[THEME_COLORS[0]],
+            type="table",
+            title=f"Comparison: {a.period_label} vs {b.period_label}",
+            data=[
+                {"Metric": "CSAT Score",
+                 a.period_label: f"{a.csat_score}%",
+                 b.period_label: f"{b.csat_score}%",
+                 "Change": f"{best_comp.delta_csat:+.1f}pp"},
+                {"Metric": "Avg Rating",
+                 a.period_label: f"{a.avg_rating:.2f}/5",
+                 b.period_label: f"{b.avg_rating:.2f}/5",
+                 "Change": f"{best_comp.delta_avg_rating:+.3f}"},
+                {"Metric": "Responses",
+                 a.period_label: f"{a.total_responses:,}",
+                 b.period_label: f"{b.total_responses:,}",
+                 "Change": f"{b.total_responses - a.total_responses:+,}"},
+            ],
+            x_key="Metric",
+            y_keys=[a.period_label, b.period_label, "Change"],
+            colors=[],
         )
 
+    # ── BRANCH 5: single comparison ────────────────────────────────────────────
+    best_comp = comparison_result
     if best_comp:
         a, b = best_comp.period_a, best_comp.period_b
 
-        # Force table
-        if force_table:
-            return VizSpec(
-                type="table",
-                title=f"Comparison: {a.period_label} vs {b.period_label}",
-                data=[
-                    {"Metric": "CSAT Score",
-                     a.period_label: f"{a.csat_score}%",
-                     b.period_label: f"{b.csat_score}%",
-                     "Change": f"{best_comp.delta_csat:+.1f}pp"},
-                    {"Metric": "Avg Rating",
-                     a.period_label: f"{a.avg_rating:.2f}/5",
-                     b.period_label: f"{b.avg_rating:.2f}/5",
-                     "Change": f"{best_comp.delta_avg_rating:+.3f}"},
-                    {"Metric": "Responses",
-                     a.period_label: f"{a.total_responses:,}",
-                     b.period_label: f"{b.total_responses:,}",
-                     "Change": f"{b.total_responses - a.total_responses:+,}"},
-                ],
-                x_key="Metric",
-                y_keys=[a.period_label, b.period_label, "Change"],
-                colors=[],
-            )
+        # Theme breakdown across both periods → grouped bar
+        a_themes = {t.theme: t.percentage for t in a.top_themes}
+        b_themes = {t.theme: t.percentage for t in b.top_themes}
+        all_keys = list(dict.fromkeys(
+            [t.theme for t in a.top_themes] + [t.theme for t in b.top_themes]
+        ))[:6]
 
-        # Theme question → grouped bar of theme percentages
-        if wants_themes or force_pie or force_bar:
-            a_themes = {t.theme: t.percentage for t in a.top_themes}
-            b_themes = {t.theme: t.percentage for t in b.top_themes}
-            all_theme_keys = list(dict.fromkeys(
-                [t.theme for t in a.top_themes] + [t.theme for t in b.top_themes]
-            ))[:6]
+        theme_data = [
+            {
+                "theme": t.replace("_", " ").title(),
+                a.period_label: round(a_themes.get(t, 0), 1),
+                b.period_label: round(b_themes.get(t, 0), 1),
+            }
+            for t in all_keys
+        ]
 
-            if force_pie:
-                # Pie of most recent period
-                return VizSpec(
-                    type="pie",
-                    title=f"Theme Distribution — {b.period_label}",
-                    data=[{"name": t.replace("_", " ").title(),
-                           "value": round(b_themes.get(t, 0), 1)}
-                          for t in all_theme_keys],
-                    x_key="name",
-                    value_key="value",
-                    unit="%",
-                    colors=THEME_COLORS,
-                )
+        # Default comparison table (always useful even when themes shown)
+        return VizSpec(
+            type="table",
+            title=f"{a.period_label} vs {b.period_label}",
+            data=[
+                {"Metric": "CSAT Score",
+                 a.period_label: f"{a.csat_score}%",
+                 b.period_label: f"{b.csat_score}%",
+                 "Change": f"{best_comp.delta_csat:+.1f}pp"},
+                {"Metric": "Avg Rating",
+                 a.period_label: f"{a.avg_rating:.2f}/5",
+                 b.period_label: f"{b.avg_rating:.2f}/5",
+                 "Change": f"{best_comp.delta_avg_rating:+.3f}"},
+                {"Metric": "Responses",
+                 a.period_label: f"{a.total_responses:,}",
+                 b.period_label: f"{b.total_responses:,}",
+                 "Change": f"{b.total_responses - a.total_responses:+,}"},
+            ],
+            x_key="Metric",
+            y_keys=[a.period_label, b.period_label, "Change"],
+            colors=[],
+        )
 
-            return VizSpec(
-                type="grouped_bar",
-                title=f"Theme Comparison: {a.period_label} vs {b.period_label}",
-                data=[
-                    {
-                        "theme": t.replace("_", " ").title(),
-                        a.period_label: round(a_themes.get(t, 0), 1),
-                        b.period_label: round(b_themes.get(t, 0), 1),
-                    }
-                    for t in all_theme_keys
-                ],
-                x_key="theme",
-                y_keys=[a.period_label, b.period_label],
-                unit="%",
-                colors=PERIOD_COLORS,
-            )
-
-        # Default comparison → table with CSAT, rating, responses side by side
-        if force_table or not (wants_themes or force_pie or force_bar):
-            a, b = best_comp.period_a, best_comp.period_b
-            return VizSpec(
-                type="table",
-                title=f"{a.period_label} vs {b.period_label}",
-                data=[
-                    {"Metric": "CSAT Score",
-                     a.period_label: f"{a.csat_score}%",
-                     b.period_label: f"{b.csat_score}%",
-                     "Change": f"{best_comp.delta_csat:+.1f}pp"},
-                    {"Metric": "Avg Rating",
-                     a.period_label: f"{a.avg_rating:.2f}/5",
-                     b.period_label: f"{b.avg_rating:.2f}/5",
-                     "Change": f"{best_comp.delta_avg_rating:+.3f}"},
-                    {"Metric": "Responses",
-                     a.period_label: f"{a.total_responses:,}",
-                     b.period_label: f"{b.total_responses:,}",
-                     "Change": f"{b.total_responses - a.total_responses:+,}"},
-                ],
-                x_key="Metric",
-                y_keys=[a.period_label, b.period_label, "Change"],
-                colors=[],
-            )
-
-    # ── BRANCH 2: Single-period data ──────────────────────────────────────────
+    # ── BRANCH 6: single period ────────────────────────────────────────────────
     if data_result:
-        # Rating distribution
-        if wants_rating:
-            dist = data_result.rating_distribution
-            if force_pie:
-                return VizSpec(
-                    type="pie",
-                    title=f"Rating Distribution — {data_result.period_label}",
-                    data=[{"name": f"{k}★", "value": v}
-                          for k, v in sorted(dist.items())],
-                    x_key="name",
-                    value_key="value",
-                    unit="responses",
-                    colors=RATING_COLORS,
-                )
-            return VizSpec(
-                type="bar",
-                title=f"Rating Distribution — {data_result.period_label}",
-                data=[{"rating": f"{k}★", "count": v}
-                      for k, v in sorted(dist.items())],
-                x_key="rating",
-                value_key="count",
-                unit="responses",
-                colors=RATING_COLORS,
-            )
-
-        # Themes (auto or explicit)
-        if wants_themes or wants_viz or force_pie or force_bar:
-            theme_data = [
-                {
-                    "theme": t.theme.replace("_", " ").title(),
-                    "percentage": t.percentage,
-                    "count": t.count,
-                }
-                for t in data_result.top_themes[:6]
-            ]
-
-            if force_pie:
-                return VizSpec(
-                    type="pie",
-                    title=f"Theme Distribution — {data_result.period_label}",
-                    data=[{"name": d["theme"], "value": d["percentage"]}
-                          for d in theme_data],
-                    x_key="name",
-                    value_key="value",
-                    unit="%",
-                    colors=THEME_COLORS,
-                )
-
-            if force_table:
-                return VizSpec(
-                    type="table",
-                    title=f"Top Themes — {data_result.period_label}",
-                    data=[{"Theme": d["theme"], "Count": d["count"],
-                           "Share": f"{d['percentage']}%"}
-                          for d in theme_data],
-                    x_key="Theme",
-                    y_keys=["Count", "Share"],
-                    colors=[],
-                )
-
-            # Default: horizontal bar
+        # Themes bar (default for single-period queries)
+        if data_result.top_themes:
             return VizSpec(
                 type="bar",
                 title=f"Top Themes — {data_result.period_label}",
-                data=theme_data,
+                data=[
+                    {
+                        "theme": t.theme.replace("_", " ").title(),
+                        "percentage": t.percentage,
+                        "count": t.count,
+                    }
+                    for t in data_result.top_themes[:6]
+                ],
                 x_key="theme",
                 value_key="percentage",
                 unit="%",
                 colors=THEME_COLORS,
             )
 
-    # ── BRANCH 3: No numeric data → no chart ─────────────────────────────────
+    # ── BRANCH 7: no numeric data ─────────────────────────────────────────────
     return None
