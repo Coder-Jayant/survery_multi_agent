@@ -104,6 +104,32 @@ def build_visualization(
             colors=[_csat_color(r["csat"]) for r in rows],
         )
 
+    # ── BRANCH 2b: theme_csat_data → grouped_bar (per-theme CSAT) ───────────────
+    # Triggered when data_agent called theme_csat_by_period tool.
+    # Useful for queries like "which theme has the lowest satisfaction" or
+    # "compare themes and their CSAT".
+    if data_result and data_result.theme_csat_data:
+        rows = data_result.theme_csat_data  # sorted worst CSAT first
+        period = data_result.period_label
+
+        return VizSpec(
+            type="grouped_bar",
+            title=f"Per-Theme CSAT & Avg Rating — {period}",
+            data=[
+                {
+                    "theme": r["theme"].replace("_", " ").title(),
+                    "CSAT %": round(r["csat"], 1),
+                    "Avg Rating": round(r["avg_rating"] * 20, 1),  # scale /5 to /100 for same axis
+                    "count": r["count"],
+                }
+                for r in rows if r["count"] > 0
+            ],
+            x_key="theme",
+            y_keys=["CSAT %", "Avg Rating"],
+            unit="%",
+            colors=["#6366f1", "#22c55e"],
+        )
+
     # ── BRANCH 3: segment_data → scorecard ────────────────────────────────────
     # Triggered when data_agent called csat_by_segment tool.
     if data_result and data_result.segment_data:
@@ -231,6 +257,23 @@ def build_visualization(
 
     # ── BRANCH 6: single period ────────────────────────────────────────────────
     if data_result:
+        # Pie chart when question explicitly requests it and rating_distribution is available
+        question_lower = question.lower()
+        if "pie" in question_lower and data_result.rating_distribution:
+            dist = data_result.rating_distribution
+            return VizSpec(
+                type="pie",
+                title=f"Rating Distribution — {data_result.period_label}",
+                data=[
+                    {"name": f"{star} Star", "value": dist.get(str(star), 0)}
+                    for star in range(1, 6)
+                    if dist.get(str(star), 0) > 0
+                ],
+                x_key="name",
+                value_key="value",
+                colors=RATING_COLORS,
+            )
+
         # Themes bar (default for single-period queries)
         if data_result.top_themes:
             return VizSpec(

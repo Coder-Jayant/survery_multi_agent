@@ -73,21 +73,34 @@ def rating_distribution(responses: list[dict]) -> dict[str, int]:
     return dist
 
 
-def extract_top_themes(responses: list[dict], n: int = 5) -> list[dict]:
+def extract_top_themes(
+    responses: list[dict],
+    n: int = 5,
+    min_rating: int | None = None,
+    max_rating: int | None = None,
+) -> list[dict]:
     """
     Classify each free-text response into themes using keyword matching.
+    Optionally filter to a specific rating range first (e.g. max_rating=1
+    for 1-star only, min_rating=4 for happy responses).
     Returns top-n themes sorted by frequency with count and percentage.
     """
-    theme_counts: Counter = Counter()
-    total = len(responses)
+    # Apply rating filter before theme extraction
+    filtered = responses
+    if min_rating is not None:
+        filtered = [r for r in filtered if r["rating"] >= min_rating]
+    if max_rating is not None:
+        filtered = [r for r in filtered if r["rating"] <= max_rating]
 
-    for r in responses:
+    theme_counts: Counter = Counter()
+    total = len(filtered)
+
+    for r in filtered:
         text_lower = r.get("free_text", "").lower()
         matched_themes = set()
         for theme, keywords in THEME_KEYWORDS.items():
             if any(kw in text_lower for kw in keywords):
                 matched_themes.add(theme)
-        # If no theme matched, label as "general"
         if not matched_themes:
             matched_themes.add("general")
         for theme in matched_themes:
@@ -234,6 +247,32 @@ def compare_themes(
     return results
 
 
+def theme_csat_by_period(responses: list[dict]) -> list[dict]:
+    """
+    For each known theme, compute CSAT, avg_rating, and count within the
+    already-filtered responses. Designed to be called once per period so
+    the LLM can compare per-theme CSAT across two periods.
+    Returns list sorted by CSAT ascending (worst first).
+    """
+    results = []
+    total = len(responses)
+    for theme, keywords in THEME_KEYWORDS.items():
+        theme_responses = [
+            r for r in responses
+            if any(kw in r.get("free_text", "").lower() for kw in keywords)
+        ]
+        count = len(theme_responses)
+        results.append({
+            "theme": theme,
+            "count": count,
+            "csat": compute_csat(theme_responses),
+            "avg_rating": compute_avg_rating(theme_responses),
+            "percentage_of_total": round((count / total) * 100, 2) if total else 0.0,
+        })
+    results.sort(key=lambda x: x["csat"])
+    return results
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Tool definitions for Groq / OpenAI function-calling schema
 # ──────────────────────────────────────────────────────────────────────────────
@@ -279,13 +318,20 @@ TOOL_DEFINITIONS = [
         "type": "function",
         "function": {
             "name": "extract_top_themes",
-            "description": "Extract the most common complaint/praise themes from survey free text.",
+            "description": (
+                "Extract the most common complaint/praise themes from survey free text. "
+                "Use min_rating/max_rating to restrict to a specific rating slice — for example, "
+                "set max_rating=1 to get top themes among 1-star responses only, "
+                "or min_rating=4 for top themes among satisfied customers."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "start_date": {"type": "string", "description": "Start date YYYY-MM-DD"},
                     "end_date":   {"type": "string", "description": "End date YYYY-MM-DD"},
                     "n": {"type": "integer", "description": "Number of top themes to return", "default": 5},
+                    "min_rating": {"type": "integer", "description": "Only include responses with rating >= this value (1-5). Omit if not needed."},
+                    "max_rating": {"type": "integer", "description": "Only include responses with rating <= this value (1-5). Omit if not needed."},
                 },
                 "required": ["start_date", "end_date"],
             },
@@ -382,6 +428,26 @@ TOOL_DEFINITIONS = [
             },
         },
     },
+    # ── NEW TOOL: theme_csat_by_period ────────────────────────────────────────
+    {
+        "type": "function",
+        "function": {
+            "name": "theme_csat_by_period",
+            "description": (
+                "Compute CSAT and avg_rating for every theme within a date range. "
+                "Use when the query asks about per-theme CSAT, which theme has the lowest satisfaction, "
+                "or when comparing theme-level CSAT across two periods (call this tool once per period)."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "start_date": {"type": "string", "description": "Start date YYYY-MM-DD"},
+                    "end_date":   {"type": "string", "description": "End date YYYY-MM-DD"},
+                },
+                "required": ["start_date", "end_date"],
+            },
+        },
+    },
 ]
 
 
@@ -399,7 +465,12 @@ def dispatch_tool(name: str, args: dict, responses: list[dict]) -> Any:
     elif name == "compute_avg_rating":
         return compute_avg_rating(filtered)
     elif name == "extract_top_themes":
-        return extract_top_themes(filtered, n=args.get("n", 5))
+        return extract_top_themes(
+            filtered,
+            n=args.get("n", 5),
+            min_rating=args.get("min_rating"),
+            max_rating=args.get("max_rating"),
+        )
     elif name == "rating_distribution":
         return rating_distribution(filtered)
     elif name == "count_responses":
@@ -413,10 +484,11 @@ def dispatch_tool(name: str, args: dict, responses: list[dict]) -> Any:
             max_rating=args.get("max_rating"),
         )
     elif name == "weekly_trend":
-        # Pass unfiltered responses so weekly_trend can apply its own date filter
         return weekly_trend(responses, start, end, metric=args.get("metric", "csat"))
     elif name == "compare_themes":
         themes = args.get("themes", [])
         return compare_themes(filtered, themes)
+    elif name == "theme_csat_by_period":
+        return theme_csat_by_period(filtered)
     else:
         raise ValueError(f"Unknown tool: {name}")

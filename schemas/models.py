@@ -66,6 +66,7 @@ class DataAgentResult(BaseModel):
     weekly_data: Optional[list[dict]] = Field(None, description="weekly_trend output: [{week, start_date, end_date, value, count, metric}]")
     segment_data: Optional[dict] = Field(None, description="csat_by_segment output: {segment, count, csat, avg_rating}")
     theme_comparison_data: Optional[list[dict]] = Field(None, description="compare_themes output: [{theme, count, csat, avg_rating, percentage_of_total}]")
+    theme_csat_data: Optional[list[dict]] = Field(None, description="theme_csat_by_period output: [{theme, count, csat, avg_rating, percentage_of_total}] sorted worst-first")
 
 
 class RAGAgentResult(BaseModel):

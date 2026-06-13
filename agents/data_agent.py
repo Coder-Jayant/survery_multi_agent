@@ -37,6 +37,7 @@ from tools.data_tools import (
     extract_top_themes,
     filter_by_period,
     rating_distribution,
+    theme_csat_by_period,
     weekly_trend,
 )
 
@@ -204,8 +205,9 @@ def run(task: TaskSpec, trace_callback=None) -> DataAgentResult:
         top_themes=top_themes,
         rating_distribution={str(k): v for k, v in rating_dist.items()},
         tool_trace=tool_trace,
-        # Populate new optional fields if those tools were called
+        # Populate optional rich-data fields if those tools were called
         weekly_data=metric_results.get("weekly_trend"),
         segment_data=metric_results.get("csat_by_segment"),
         theme_comparison_data=metric_results.get("compare_themes"),
+        theme_csat_data=metric_results.get("theme_csat_by_period"),
     )
