@@ -69,28 +69,42 @@ def _deterministic_narrative(
     effective_comparisons: list[ComparisonAgentResult],
 ) -> str:
     """Produce a structured narrative without an LLM."""
-    parts = []
+    parts = [
+        "**🤖 Automated Fallback Report**\n",
+        "*The LLM is currently unavailable or rate-limited. This report was generated using deterministic data from the analytics engine.*",
+        ""
+    ]
+
     if effective_comparisons:
         for comp in effective_comparisons:
             a, b = comp.period_a, comp.period_b
-            parts.append(
-                f"Comparison {a.period_label} vs {b.period_label}: "
-                f"CSAT changed by {comp.delta_csat:+.1f}pp, "
-                f"avg rating by {comp.delta_avg_rating:+.3f}. "
-                f"{comp.insight_summary}"
-            )
+            dir_indicator = "✅ Improved" if comp.delta_csat >= 0 else "🚨 Declined"
+            parts.append(f"### {a.period_label} vs {b.period_label}")
+            parts.append(f"- **CSAT Change:** {comp.delta_csat:+.1f}pp ({dir_indicator})")
+            parts.append(f"- **Rating Change:** {comp.delta_avg_rating:+.2f}")
+            if comp.insight_summary:
+                parts.append(f"- **Key Shift:** {comp.insight_summary}")
+            parts.append("")
     elif data_result:
-        parts.append(
-            f"For {data_result.period_label}: CSAT={data_result.csat_score}%, "
-            f"avg_rating={data_result.avg_rating:.2f}/5, "
-            f"total responses={data_result.total_responses:,}. "
-            f"Top themes: {', '.join(t.theme for t in data_result.top_themes[:3])}."
-        )
+        parts.append(f"### Overview for {data_result.period_label}")
+        parts.append(f"- **Total Responses:** {data_result.total_responses:,}")
+        parts.append(f"- **CSAT:** {data_result.csat_score}%")
+        parts.append(f"- **Avg Rating:** {data_result.avg_rating:.2f} / 5")
+        
+        top_themes = [f"{t.theme} ({t.percentage:.1f}%)" for t in data_result.top_themes[:3]]
+        if top_themes:
+            parts.append(f"- **Top Themes:** {', '.join(top_themes)}")
+        parts.append("")
+
     if rag_result:
-        parts.append(f"Business context: {rag_result.context_summary}")
-    if not parts:
-        parts.append(f"Query: {task.intent}. No structured data available.")
-    return " ".join(parts)
+        parts.append("### Relevant Business Context")
+        parts.append(f"> {rag_result.context_summary}")
+        parts.append("")
+
+    if len(parts) <= 3:
+        parts.append(f"Could not compute data for: *{task.intent}*")
+
+    return "\n".join(parts)
 
 
 def run(
@@ -159,9 +173,7 @@ def run(
         "- Include specific numbers (CSAT %, avg rating, response counts)\n"
         "- Reference the business context where relevant\n"
         "- End with a concrete, actionable recommendation\n"
-        "- Write in business-professional tone\n"
-        "- DO NOT apologize or state that you cannot create graphs or visualizations. The UI automatically renders charts. Focus ONLY on the narrative.\n"
-        "- Keep the narrative concise (1-2 paragraphs max). Do not use bloated markdown headers like 'Executive Summary' or 'Detailed Analysis'.\n\n"
+        "- Write in business-professional tone\n\n"
         f"**Business Question**: {task.context.get('original_question', task.intent)}\n\n"
         f"**Structured Data**:\n{context_block}"
     )
