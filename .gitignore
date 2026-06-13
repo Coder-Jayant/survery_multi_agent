@@ -20,7 +20,11 @@ minisense.zip
 
 # Sensitive / unused
 Assignment.docx
+INTERVIEW_PREP.md
+implementation_plan*
+test_imports.py
 .DS_Store
 
 # survey_responses.json and rag/vector_store/ are intentionally committed
 # so Railway has them on first boot without needing a slow generation step.
+
