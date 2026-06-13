@@ -70,8 +70,11 @@ def _deterministic_narrative(
 ) -> str:
     """Produce a structured narrative without an LLM."""
     parts = [
-        "**🤖 Automated Fallback Report**\n",
-        "*The LLM is currently unavailable or rate-limited. This report was generated using deterministic data from the analytics engine.*",
+        "### ⚠️ AI Provider Unavailable",
+        "An error occurred while connecting to the AI language model (e.g., rate limit or missing API key).",
+        "",
+        "Instead of failing completely, MiniSense has automatically fallen back to its deterministic analytics engine to provide the raw data for your query:",
+        "---",
         ""
     ]
 
@@ -101,7 +104,7 @@ def _deterministic_narrative(
         parts.append(f"> {rag_result.context_summary}")
         parts.append("")
 
-    if len(parts) <= 3:
+    if len(parts) <= 6:
         parts.append(f"Could not compute data for: *{task.intent}*")
 
     return "\n".join(parts)
