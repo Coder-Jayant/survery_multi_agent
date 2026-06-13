@@ -317,3 +317,34 @@ SSE is unidirectional (server → client) which is all we need. Works through HT
 | Bonus: cross-encoder reranking | ✅ (bonus) | `rag/retrieve.py` two-stage pipeline |
 | Bonus: full web UI | ✅ (bonus) | React frontend with 9 pages |
 | Bonus: SSE real-time tracing | ✅ (bonus) | `api/routes_agents.py` + SSE events |
+
+---
+
+## 15. Evolution & Recent Architectural Decisions (What, Why, How)
+
+During development and stress-testing, several critical architectural refinements were made to handle edge cases and complex analytical queries. These represent real-world engineering decisions discussed and implemented to make the system robust.
+
+### 1. The "What, Why, How" of Graceful Fallbacks
+- **What:** Replaced silent failures and ugly JSON dumps with an automated, beautifully formatted Markdown fallback report in `SummaryAgent`.
+- **Why:** When LLM APIs fail (e.g., rate limits, context window overflow, or service outages), the user still needs the hard data extracted by the deterministic `DataAgent`. Showing raw JSON breaks trust and looks unprofessional.
+- **How:** If the final LLM synthesis fails, a deterministic Python fallback kicks in. It takes the `DataAgentResult` and formats it into a clean Markdown report with bullet points and the raw metrics. It explicitly adds a note: *"⚠️ Automated Fallback Report"* so the user knows the LLM didn't write it, maintaining transparency while still delivering value.
+
+### 2. Solving Complex Multi-Faceted Queries
+- **What:** Added rating filters (`min_rating`/`max_rating`) to `extract_top_themes` and created a new `theme_csat_by_period` tool.
+- **Why:** The LLM was hallucinating when asked complex questions like "What are the top themes for 1-star ratings?" because it only had a generic `extract_top_themes` tool that looked at the entire dataset. It couldn't cross-reference ratings and themes, leading to generic, incorrect answers.
+- **How:** By adding parameters to the tools and explicitly documenting them in the Orchestrator and DataAgent system prompts, the LLM now intelligently chains operations. For example, for "1-star themes", it passes `max_rating=1`, ensuring the analysis is strictly bounded to dissatisfied customers.
+
+### 3. Deterministic Data-Driven Visualizations
+- **What:** The `viz_builder.py` deterministically maps data shapes to UI components (e.g., `theme_csat_data` -> `grouped_bar`, `rating_distribution` + "pie" keyword -> `pie` chart).
+- **Why:** We wanted rich visualizations (heatbars, line charts, scorecards) without forcing the LLM to write complex UI code (like Vega-Lite) or hallucinating chart parameters. 
+- **How:** The orchestrator inspects the resulting data object's shape. If it sees cross-period theme data, it outputs a `grouped_bar`. If it sees weekly data, it outputs a `line` chart. Zero LLM calls are used for visualization generation. This saves tokens and guarantees the chart matches the data perfectly.
+
+### 4. Dynamic System Prompts & Context Boundaries
+- **What:** Replaced hardcoded dates in system prompts with dynamic dates (`datetime.date.today()`) and expanded dataset awareness (Jan-May 2026, 195k records).
+- **Why:** The orchestrator was failing to plan queries for older months because the prompt falsely stated data only existed for April and May. Furthermore, forcing the LLM to "always call these 4 tools" wasted tokens on simple queries.
+- **How:** Updated the prompts to accurately reflect the 195k record span and added rules to infer the target month from the user's query. Removed rigid tool mandates, instead providing a "menu" of tools with hints on when to use them (e.g., "use `weekly_trend` for spikes").
+
+### 5. Deployment Strategy & Git Tracking
+- **What:** Automated deployment using `update_server.py` on a VPS, while deliberately tracking `config.json` in Git.
+- **Why:** Standard practice ignores config files, but for a standalone demo application, keeping a base config tracked allows for one-command deployments (`git pull` + restart) without manual server configuration tweaking on the VPS.
+- **How:** The update script stashes local changes, pulls from master, restarts the FastAPI service, and performs a health check. This reduces deployment time to ~10 seconds and ensures the live demo is always in sync with the latest fixes.
