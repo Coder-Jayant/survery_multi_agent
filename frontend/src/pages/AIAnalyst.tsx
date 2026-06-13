@@ -36,11 +36,11 @@ interface TraceStep {
 }
 
 const SUGGESTIONS = [
-  "What are the top complaints in May 2026?",
+  "Show me the weekly CSAT trend across April and May",
   "Compare April vs May 2026 CSAT",
   "What does the FAQ say about complaint handling?",
   "Which theme showed the biggest improvement?",
-  "What's the business health score for May?",
+  "What is the CSAT for mobile users complaining about staff in May?",
   "Why did ratings drop in May?",
 ]
 
@@ -60,7 +60,6 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
   const [activeAgents, setActiveAgents] = useState<string[]>([])
   const [doneAgents, setDoneAgents] = useState<string[]>([])
   const [showGraph, setShowGraph] = useState(false)
-  const [llmWarning, setLlmWarning] = useState<string | null>(null)
   const latencyStartRef = useRef<number>(0)
   const stopRef = useRef<(() => void) | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -90,7 +89,6 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
     setActiveMetrics({})
     setActiveAgents([])
     setDoneAgents([])
-    setLlmWarning(null)
     latencyStartRef.current = Date.now()
 
     const userMsg: Message = { id: `u${Date.now()}`, role: 'user', text: question }
@@ -102,9 +100,6 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
       question,
       (event: SSEEvent) => {
         setTraceSteps(prev => [...prev, event as TraceStep])
-        if (event.type === 'llm_warning') {
-          setLlmWarning(event.reason)
-        }
         if (event.type === 'agent_start') {
           setActiveAgents(prev => [...prev.filter(a => a !== event.agent), event.agent!])
         }
@@ -320,18 +315,6 @@ export function AIAnalyst({ prefill }: { prefill?: string }) {
             ))}
           </div>
         </div>
-
-        {/* LLM warning banner */}
-        {llmWarning && (
-          <div className="mx-4 mb-2 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-xs text-amber-300">
-            <span className="shrink-0 mt-0.5">⚠</span>
-            <span className="flex-1 leading-relaxed">{llmWarning}</span>
-            <button
-              onClick={() => setLlmWarning(null)}
-              className="shrink-0 text-amber-400/60 hover:text-amber-300 transition-colors text-base leading-none"
-            >×</button>
-          </div>
-        )}
 
         {/* Input */}
         <div className="px-4 py-3 pb-4 border-t border-[#2a2a3a]">
