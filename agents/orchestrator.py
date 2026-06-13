@@ -16,7 +16,6 @@ It always uses TaskSpec (in) and *AgentResult (out).
 
 Fallback: if no LLM is available (missing API key), _deterministic_plan() uses
 keyword heuristics to build a sensible plan — the system never crashes.
-Credit: fallback planner design inspired by the Lovable minisense architecture.
 """
 
 from __future__ import annotations
@@ -25,6 +24,7 @@ import json
 import os
 import sys
 import uuid
+from datetime import date as _date
 from typing import Any
 
 from dotenv import load_dotenv
@@ -147,21 +147,33 @@ def _plan(question: str) -> list[dict]:
         print("[orchestrator] LLM unavailable — using deterministic planner")
         return _deterministic_plan(question)
 
-    today = "2026-06-08"
+    today = str(_date.today())
     system_prompt = (
-        "You are the Orchestrator for MiniSense, a survey analytics system for GreenLeaf Bistro. "
-        "Available agents:\n"
-        "- data_agent: computes exact metrics (CSAT, avg rating, themes) for a date period\n"
-        "- rag_agent: retrieves relevant FAQ/policy context for a query\n"
-        "- comparison_agent: compares two time periods (e.g., April vs May)\n"
-        "- summary_agent: synthesizes all data into a final narrative (always last)\n\n"
-        "Survey data covers: April 2026 (2026-04-01 to 2026-04-30) and May 2026 (2026-05-01 to 2026-05-31).\n"
+        "You are the Orchestrator for MiniSense, a multi-agent survey analytics system for GreenLeaf Bistro.\n"
         "Today's date: " + today + "\n\n"
+        "Dataset coverage: January 2026 through May 2026 (2026-01-01 to 2026-05-31). "
+        "195,000 survey responses across 5 months.\n\n"
+        "Available agents:\n"
+        "- data_agent: computes exact metrics for a date period. Its tools include:\n"
+        "    * compute_csat, compute_avg_rating, rating_distribution (always)\n"
+        "    * extract_top_themes — top N complaint themes; supports min_rating/max_rating filter\n"
+        "      (e.g. use max_rating=1 for '1-star themes', min_rating=4 for 'satisfied themes')\n"
+        "    * csat_by_segment — CSAT for a specific channel (mobile/web/kiosk/email) + theme slice\n"
+        "    * weekly_trend — CSAT/rating/count broken into ISO weeks; use for 'weekly trend' queries\n"
+        "    * compare_themes — CSAT+count for a named list of themes side-by-side\n"
+        "    * theme_csat_by_period — CSAT and avg_rating for all 6 themes in a period\n\n"
+        "- rag_agent: retrieves GreenLeaf Bistro FAQ and policy context for a query\n"
+        "- comparison_agent: compares two time periods (e.g., March vs May). Use when the query mentions\n"
+        "  change, vs, compare, trend across months, or asks about two different months.\n"
+        "- summary_agent: synthesizes all data into a final narrative (added automatically — do NOT include it)\n\n"
         "Rules:\n"
-        "1. Always include rag_agent to add business context\n"
-        "2. Use comparison_agent when the question asks about changes, trends, or two periods\n"
+        "1. Always include rag_agent for business context\n"
+        "2. Use comparison_agent when the query asks about changes or compares two months\n"
         "3. Use data_agent when asking about a single period's metrics\n"
-        "4. Do NOT include summary_agent in the tasks list — it is added automatically\n"
+        "4. For single-period queries about themes+CSAT (e.g. 'which theme has lowest CSAT in May'), "
+        "   the data_agent will automatically use theme_csat_by_period — just set the date range correctly\n"
+        "5. Infer the most relevant month(s) from the question. Default to May 2026 if unspecified.\n"
+        "6. Do NOT include summary_agent in the tasks list — it is added automatically\n"
         "Call create_execution_plan with an ordered task list."
     )
 

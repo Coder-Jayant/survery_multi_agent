@@ -16,9 +16,9 @@ import os
 import sys
 
 from dotenv import load_dotenv
-from groq import Groq
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from providers.llm import get_llm
 from schemas.models import ComparisonAgentResult, DataAgentResult, TaskSpec
 import agents.data_agent as data_agent
 
@@ -68,9 +68,6 @@ def run(
         cached_result_a: Pre-computed DataAgentResult for period A (avoids re-running DataAgent).
         cached_result_b: Pre-computed DataAgentResult for period B (avoids re-running DataAgent).
     """
-    client = Groq(api_key=os.environ["GROQ_API_KEY"])
-    model = os.environ.get("GROQ_MODEL", "llama-3.3-70b-versatile")
-
     filters = task.filters
     period_a_range = filters.get("period_a", {"start": "2026-04-01", "end": "2026-04-30"})
     period_b_range = filters.get("period_b", {"start": "2026-05-01", "end": "2026-05-31"})
@@ -108,7 +105,7 @@ def run(
     themes_b = _theme_map(result_b)
     emerging, declining = identify_shifts(themes_a, themes_b)
 
-    # ── Step 3: Generate insight summary with LLM ─────────────────────────────
+    # ── Step 3: Generate insight summary with LLM ──────────────────────────────
     insight_prompt = (
         f"You are a business analyst. Compare these two periods for GreenLeaf Bistro:\n\n"
         f"Period A ({label_a}): CSAT={result_a.csat_score}%, avg_rating={result_a.avg_rating}, "
@@ -122,12 +119,24 @@ def run(
         "Be direct and business-focused."
     )
 
-    response = client.chat.completions.create(
-        model=model,
-        messages=[{"role": "user", "content": insight_prompt}],
-        max_tokens=150,
-    )
-    insight_summary = response.choices[0].message.content.strip()
+    insight_summary = ""
+    try:
+        llm = get_llm()
+        if llm.available:
+            resp = llm.chat(messages=[{"role": "user", "content": insight_prompt}], max_tokens=150)
+            insight_summary = resp.content.strip()
+    except Exception as e:
+        print(f"[ComparisonAgent] LLM error: {e}")
+
+    # Deterministic fallback — never leaves insight_summary empty
+    if not insight_summary:
+        direction = "improved" if delta_csat >= 0 else "declined"
+        e_str = f"; emerging: {', '.join(emerging)}" if emerging else ""
+        d_str = f"; declining: {', '.join(declining)}" if declining else ""
+        insight_summary = (
+            f"CSAT {direction} by {abs(delta_csat):.1f}pp from {label_a} to {label_b}"
+            f"{e_str}{d_str}."
+        )
 
     return ComparisonAgentResult(
         period_a=result_a,

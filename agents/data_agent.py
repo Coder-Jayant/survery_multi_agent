@@ -73,10 +73,19 @@ def run(task: TaskSpec, trace_callback=None) -> DataAgentResult:
 
     # ── Step 1: Ask the LLM which tools to call ──────────────────────────────
     system_prompt = (
-        "You are DataAgent, a precise survey analytics engine. "
-        "Given a task, call the appropriate tools to gather all needed metrics. "
-        "Always call: compute_csat, compute_avg_rating, extract_top_themes, and rating_distribution. "
-        "Use the provided date range for all calls."
+        "You are DataAgent, a precise survey analytics engine for GreenLeaf Bistro.\n"
+        "Given a task and date range, call the appropriate tools to compute the needed metrics.\n\n"
+        "Core tools to call for every request:\n"
+        "  - compute_csat, compute_avg_rating, rating_distribution, extract_top_themes\n\n"
+        "Additional tools — call these based on the task intent:\n"
+        "  - extract_top_themes with max_rating=1  → when asked about '1-star' or lowest-rated themes\n"
+        "  - extract_top_themes with min_rating=4  → when asked about 'satisfied' or 'positive' themes\n"
+        "  - csat_by_segment(channel, theme)       → when asked about a specific channel or theme slice\n"
+        "  - weekly_trend(metric)                  → when asked about weekly trends, spikes, or patterns\n"
+        "  - compare_themes(themes=[...])          → when asked which of two specific themes is worse\n"
+        "  - theme_csat_by_period                 → when asked about per-theme CSAT, or which theme\n"
+        "                                           has lowest/highest satisfaction in a period\n\n"
+        "Always use the provided date range for all calls. Be precise."
     )
     user_message = (
         f"Task: {task.intent}\n"
