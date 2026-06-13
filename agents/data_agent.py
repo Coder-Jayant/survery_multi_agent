@@ -28,6 +28,8 @@ from providers.llm import get_llm
 from schemas.models import DataAgentResult, DateRange, TaskSpec, ThemeCount
 from tools.data_tools import (
     TOOL_DEFINITIONS,
+    csat_by_segment,
+    compare_themes,
     compute_avg_rating,
     compute_csat,
     count_responses,
@@ -35,6 +37,7 @@ from tools.data_tools import (
     extract_top_themes,
     filter_by_period,
     rating_distribution,
+    weekly_trend,
 )
 
 load_dotenv()
