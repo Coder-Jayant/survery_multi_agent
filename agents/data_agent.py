@@ -65,11 +65,28 @@ def run(task: TaskSpec, trace_callback=None) -> DataAgentResult:
 
     filters = task.filters
     date_range = filters.get("date_range", {})
-    start_date = date_range.get("start", "2026-04-01")
-    end_date   = date_range.get("end",   "2026-05-31")
-    period_label = filters.get("period_label", f"{start_date} to {end_date}")
 
     responses = list(_load_responses())
+
+    # Derive default date range from dataset bounds if not provided by orchestrator
+    if not date_range:
+        try:
+            from calendar import monthrange as _mr
+            import datetime as _dt
+            dates = [r["date"] for r in responses if r.get("date")]
+            _max = _dt.date.fromisoformat(max(dates))
+            _start = _max.replace(day=1)
+            _end = _max.replace(day=_mr(_max.year, _max.month)[1])
+            start_date, end_date = str(_start), str(_end)
+        except Exception:
+            start_date, end_date = "2026-05-01", "2026-05-31"
+    else:
+        start_date = date_range.get("start", "2026-05-01")
+        end_date   = date_range.get("end",   "2026-05-31")
+
+    period_label = filters.get("period_label", f"{start_date} to {end_date}")
+
+
 
     # ── Step 1: Ask the LLM which tools to call ──────────────────────────────
     system_prompt = (
