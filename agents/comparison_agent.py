@@ -123,7 +123,7 @@ def run(
     try:
         llm = get_llm()
         if llm.available:
-            resp = llm.chat(messages=[{"role": "user", "content": insight_prompt}], max_tokens=150)
+            resp = llm.chat(messages=[{"role": "user", "content": insight_prompt}])
             insight_summary = resp.content.strip()
     except Exception as e:
         print(f"[ComparisonAgent] LLM error: {e}")

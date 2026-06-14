@@ -152,6 +152,7 @@ class LLM:
         tools: list[dict] | None = None,
         json_mode: bool = False,
         tool_choice: str | dict = "auto",
+        max_tokens: int | None = None,
     ) -> LLMResponse:
         """
         Unified chat call. Returns LLMResponse with content + tool_calls.
@@ -160,17 +161,19 @@ class LLM:
         if not self.available:
             return LLMResponse()
         try:
-            return self._groq_openai_chat(messages, tools, json_mode, tool_choice)
+            return self._groq_openai_chat(messages, tools, json_mode, tool_choice, max_tokens)
         except Exception as e:
             print(f"[LLM] chat error: {e}")
             return LLMResponse()
 
-    def _groq_openai_chat(self, messages, tools, json_mode, tool_choice) -> LLMResponse:
+    def _groq_openai_chat(self, messages, tools, json_mode, tool_choice, max_tokens=None) -> LLMResponse:
         kwargs: dict[str, Any] = dict(
             model=self.model,
             messages=messages,
             temperature=self.temperature,
         )
+        if max_tokens is not None:
+            kwargs["max_tokens"] = max_tokens
         if tools:
             kwargs["tools"] = tools
             kwargs["tool_choice"] = tool_choice
