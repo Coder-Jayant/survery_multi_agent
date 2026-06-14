@@ -171,11 +171,12 @@ def run(task: TaskSpec, trace_callback=None) -> DataAgentResult:
 
                 result = dispatch_tool(fn_name, fn_args, responses)
 
-                # Use a list to accumulate multiple calls to the same tool
-                # (e.g. csat_by_segment called twice for email and web channels)
-                if fn_name in metric_results:
+                # csat_by_segment is the ONLY tool that can be called multiple times
+                # with different args (e.g. channel='email' then channel='web').
+                # All other tools overwrite — calling them twice is redundant.
+                if fn_name == "csat_by_segment" and fn_name in metric_results:
                     existing = metric_results[fn_name]
-                    if isinstance(existing, list) and not isinstance(existing, dict):
+                    if isinstance(existing, list):
                         existing.append(result)
                     else:
                         metric_results[fn_name] = [existing, result]
