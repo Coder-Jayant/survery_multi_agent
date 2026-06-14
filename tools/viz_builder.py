@@ -132,23 +132,49 @@ def build_visualization(
 
     # ── BRANCH 3: segment_data → scorecard ────────────────────────────────────
     # Triggered when data_agent called csat_by_segment tool.
+    # segment_data can be a single dict (one channel) or list of dicts (multi-channel comparison)
     if data_result and data_result.segment_data:
-        seg = data_result.segment_data
+        seg_raw = data_result.segment_data
+        period = data_result.period_label
+
+        # Multi-channel comparison (e.g. email vs web — csat_by_segment called twice)
+        if isinstance(seg_raw, list):
+            rows = []
+            for seg in seg_raw:
+                segment_info = seg.get("segment", {})
+                parts = [v for v in segment_info.values() if v is not None]
+                seg_label = " + ".join(str(p) for p in parts) if parts else "Segment"
+                rows.append({
+                    "label": seg_label,
+                    "CSAT %": seg.get("csat", 0),
+                    "Avg Rating": seg.get("avg_rating", 0),
+                    "Responses": seg.get("count", 0),
+                })
+            return VizSpec(
+                type="bar",
+                title=f"Channel Comparison — {period}",
+                data=rows,
+                x_key="label",
+                y_keys=["CSAT %"],
+                unit="%",
+                colors=["#6366f1", "#22c55e", "#f59e0b", "#ec4899"],
+            )
+
+        # Single segment scorecard
+        seg = seg_raw
         segment_info = seg.get("segment", {})
         parts = [v for v in segment_info.values() if v is not None]
         seg_label = " + ".join(str(p) for p in parts) if parts else "Segment"
-        period = data_result.period_label
 
         return VizSpec(
             type="scorecard",
             title=f"Segment Analysis — {period}",
             data=[
-                {"label": "Segment", "value": seg_label},
-                {"label": "CSAT",    "value": f"{seg.get('csat', 0):.1f}%",
+                {"label": "Segment",      "value": seg_label},
+                {"label": "CSAT",         "value": f"{seg.get('csat', 0):.1f}%",
                  "color": _csat_color(seg.get("csat", 0))},
-                {"label": "Avg Rating", "value": f"{seg.get('avg_rating', 0):.2f} / 5"},
-                {"label": "Responses",  "value": f"{seg.get('count', 0):,}"},
-                # Overall CSAT for context delta
+                {"label": "Avg Rating",   "value": f"{seg.get('avg_rating', 0):.2f} / 5"},
+                {"label": "Responses",    "value": f"{seg.get('count', 0):,}"},
                 {"label": "Overall CSAT", "value": f"{data_result.csat_score:.1f}%"},
             ],
             x_key="label",
@@ -156,6 +182,7 @@ def build_visualization(
             unit="%",
             colors=[_csat_color(seg.get("csat", 0))],
         )
+
 
     # ── BRANCH 4: multiple comparison results → period trend bar ──────────────
     if all_comparison_results and len(all_comparison_results) > 1:

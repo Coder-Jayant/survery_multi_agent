@@ -8,7 +8,7 @@ and sub-agents always return typed result objects — never raw strings.
 from __future__ import annotations
 
 from datetime import date
-from typing import Any, Literal, Optional
+from typing import Any, Literal, Optional, Union
 from pydantic import BaseModel, Field
 
 
@@ -64,7 +64,7 @@ class DataAgentResult(BaseModel):
     tool_trace: list[str] = Field(default_factory=list, description="Log of tool calls made")
     # Optional rich data from new tools — populated only when those tools were called
     weekly_data: Optional[list[dict]] = Field(None, description="weekly_trend output: [{week, start_date, end_date, value, count, metric}]")
-    segment_data: Optional[dict] = Field(None, description="csat_by_segment output: {segment, count, csat, avg_rating}")
+    segment_data: Optional[Union[dict, list[dict]]] = Field(None, description="csat_by_segment output: single {segment, count, csat, avg_rating} or list when called multiple times (e.g. email vs web)")
     theme_comparison_data: Optional[list[dict]] = Field(None, description="compare_themes output: [{theme, count, csat, avg_rating, percentage_of_total}]")
     theme_csat_data: Optional[list[dict]] = Field(None, description="theme_csat_by_period output: [{theme, count, csat, avg_rating, percentage_of_total}] sorted worst-first")
 
