@@ -104,12 +104,28 @@ def _deterministic_plan(question: str) -> list[dict]:
     Guarantees the system never crashes due to missing API key.
     """
     q = question.lower()
+
     needs_compare = any(w in q for w in [
         "compare", "vs", "versus", "month over month", "last month",
         "previous month", "between", "change", "trend", "differ"
     ])
+    # Pure FAQ / policy questions — no survey data needed
+    faq_only = any(w in q for w in [
+        "what is your", "how do you", "what are your", "policy", "faq",
+        "menu", "wait time policy", "refund", "complaint process", "target",
+        "nps", "csat target", "benchmark"
+    ]) and not any(w in q for w in [
+        "csat", "rating", "score", "survey", "response", "theme", "complaint", "satisfaction"
+    ])
+
     tasks = []
-    if needs_compare:
+    if faq_only:
+        tasks.append({
+            "agent": "rag_agent",
+            "intent": question,
+            "filters": {},
+        })
+    elif needs_compare:
         tasks.append({
             "agent": "comparison_agent",
             "intent": "Month-over-month comparison April vs May 2026",
@@ -120,6 +136,11 @@ def _deterministic_plan(question: str) -> list[dict]:
                 "label_b": "May 2026",
             },
         })
+        tasks.append({
+            "agent": "rag_agent",
+            "intent": question,
+            "filters": {},
+        })
     else:
         tasks.append({
             "agent": "data_agent",
@@ -129,11 +150,6 @@ def _deterministic_plan(question: str) -> list[dict]:
                 "period_label": "May 2026",
             },
         })
-    tasks.append({
-        "agent": "rag_agent",
-        "intent": question,
-        "filters": {},
-    })
     return tasks
 
 
@@ -153,28 +169,27 @@ def _plan(question: str) -> list[dict]:
         "Today's date: " + today + "\n\n"
         "Dataset coverage: January 2026 through May 2026 (2026-01-01 to 2026-05-31). "
         "195,000 survey responses across 5 months.\n\n"
-        "Available agents:\n"
-        "- data_agent: computes exact metrics for a date period. Its tools include:\n"
-        "    * compute_csat, compute_avg_rating, rating_distribution (always)\n"
-        "    * extract_top_themes — top N complaint themes; supports min_rating/max_rating filter\n"
-        "      (e.g. use max_rating=1 for '1-star themes', min_rating=4 for 'satisfied themes')\n"
-        "    * csat_by_segment — CSAT for a specific channel (mobile/web/kiosk/email) + theme slice\n"
-        "    * weekly_trend — CSAT/rating/count broken into ISO weeks; use for 'weekly trend' queries\n"
-        "    * compare_themes — CSAT+count for a named list of themes side-by-side\n"
-        "    * theme_csat_by_period — CSAT and avg_rating for all 6 themes in a period\n\n"
-        "- rag_agent: retrieves GreenLeaf Bistro FAQ and policy context for a query\n"
-        "- comparison_agent: compares two time periods (e.g., March vs May). Use when the query mentions\n"
-        "  change, vs, compare, trend across months, or asks about two different months.\n"
-        "- summary_agent: synthesizes all data into a final narrative (added automatically — do NOT include it)\n\n"
-        "Rules:\n"
-        "1. Always include rag_agent for business context\n"
-        "2. Use comparison_agent when the query asks about changes or compares two months\n"
-        "3. Use data_agent when asking about a single period's metrics\n"
-        "4. For single-period queries about themes+CSAT (e.g. 'which theme has lowest CSAT in May'), "
-        "   the data_agent will automatically use theme_csat_by_period — just set the date range correctly\n"
+        "Available agents — include ONLY what the query requires:\n"
+        "- data_agent: computes exact metrics from the survey dataset for a date period.\n"
+        "    Use ONLY when the query asks about ratings, CSAT, themes, scores, or response counts.\n"
+        "    Tools available: compute_csat, compute_avg_rating, rating_distribution,\n"
+        "    extract_top_themes (supports min_rating/max_rating), csat_by_segment,\n"
+        "    weekly_trend, compare_themes, theme_csat_by_period.\n\n"
+        "- rag_agent: retrieves GreenLeaf Bistro FAQ and business policy context.\n"
+        "    Use when the query asks about policies, targets, menu items, wait time standards,\n"
+        "    complaint processes, or background business context from the FAQ.\n\n"
+        "- comparison_agent: compares two time periods side by side.\n"
+        "    Use ONLY when the query explicitly asks about changes, trends across months,\n"
+        "    'vs', 'compare', or two different months.\n\n"
+        "- summary_agent: synthesizes all data into a final narrative (added automatically — do NOT include it).\n\n"
+        "Agent selection rules:\n"
+        "1. Pure FAQ / policy question (e.g. 'What is your wait time target?') → rag_agent ONLY\n"
+        "2. Pure metrics question (e.g. 'What is CSAT in May?') → data_agent ONLY\n"
+        "3. Mixed question needing data + context → data_agent + rag_agent\n"
+        "4. Comparison question → comparison_agent + rag_agent (skip data_agent, comparison runs DataAgent internally)\n"
         "5. Infer the most relevant month(s) from the question. Default to May 2026 if unspecified.\n"
-        "6. Do NOT include summary_agent in the tasks list — it is added automatically\n"
-        "Call create_execution_plan with an ordered task list."
+        "6. Do NOT include summary_agent in the tasks list — it is added automatically.\n\n"
+        "Call create_execution_plan with an ordered, minimal task list."
     )
 
     resp: LLMResponse = llm.chat(
