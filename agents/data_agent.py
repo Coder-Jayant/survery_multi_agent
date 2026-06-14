@@ -109,7 +109,10 @@ def run(task: TaskSpec, trace_callback=None) -> DataAgentResult:
         "  'Top complaints in May?' → call extract_top_themes only\n"
         "  'Compare food vs wait time?' → call compare_themes only\n"
         "  'Which week had worst ratings?' → call weekly_trend only\n"
-        "  'Full summary of April metrics?' → call compute_csat, compute_avg_rating, extract_top_themes\n\n"
+        "  'Full summary of April metrics?' → call compute_csat, compute_avg_rating, extract_top_themes\n"
+        "  'How do email complaints differ from web complaints?' → call csat_by_segment twice: once with channel='email', once with channel='web'\n"
+        "  'CSAT for mobile users with staff complaints?' → call csat_by_segment with channel='mobile' AND theme='staff'\n\n"
+        "IMPORTANT: csat_by_segment can be called multiple times with different arguments in the same response.\n"
         "Always use the provided date range. Be precise and minimal."
     )
     user_message = (
@@ -167,7 +170,17 @@ def run(task: TaskSpec, trace_callback=None) -> DataAgentResult:
                                     "tool": fn_name, "args": fn_args})
 
                 result = dispatch_tool(fn_name, fn_args, responses)
-                metric_results[fn_name] = result
+
+                # Use a list to accumulate multiple calls to the same tool
+                # (e.g. csat_by_segment called twice for email and web channels)
+                if fn_name in metric_results:
+                    existing = metric_results[fn_name]
+                    if isinstance(existing, list) and not isinstance(existing, dict):
+                        existing.append(result)
+                    else:
+                        metric_results[fn_name] = [existing, result]
+                else:
+                    metric_results[fn_name] = result
 
                 if trace_callback:
                     trace_callback({"type": "tool_result", "agent": "data_agent",

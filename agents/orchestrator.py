@@ -98,11 +98,37 @@ PLANNING_TOOL = [
 ]
 
 
+def _get_dataset_date_bounds() -> tuple[str, str]:
+    """
+    Reads the survey dataset and returns (min_date, max_date) as ISO strings.
+    Used by _deterministic_plan to avoid hardcoded month ranges.
+    Cached after first call via module-level variable.
+    """
+    try:
+        import json as _json
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        cfg_path = os.path.join(root, "config", "config.json")
+        with open(cfg_path, "r", encoding="utf-8") as f:
+            cfg = _json.load(f)
+        dataset_file = cfg.get("active_dataset", "survey_responses.json")
+        data_path = os.path.join(root, "data", dataset_file)
+        with open(data_path, "r", encoding="utf-8") as f:
+            data = _json.load(f)
+        dates = [r["date"] for r in data["responses"] if r.get("date")]
+        return min(dates), max(dates)
+    except Exception:
+        return "2026-01-01", "2026-05-31"  # absolute last-resort fallback
+
+
 def _deterministic_plan(question: str) -> list[dict]:
     """
     Keyword-based fallback planner — runs without any LLM.
     Guarantees the system never crashes due to missing API key.
+    Derives date bounds from the actual dataset — no hardcoded months.
     """
+    from calendar import monthrange
+    import datetime
+
     q = question.lower()
 
     needs_compare = any(w in q for w in [
@@ -118,6 +144,19 @@ def _deterministic_plan(question: str) -> list[dict]:
         "csat", "rating", "score", "survey", "response", "theme", "complaint", "satisfaction"
     ])
 
+    # Derive the latest and second-latest months from the dataset dynamically
+    _, max_date_str = _get_dataset_date_bounds()
+    max_dt = datetime.date.fromisoformat(max_date_str)
+    # Latest full month
+    last_month_end = max_dt.replace(day=monthrange(max_dt.year, max_dt.month)[1])
+    last_month_start = max_dt.replace(day=1)
+    # Month before latest
+    prev_month_end = last_month_start - datetime.timedelta(days=1)
+    prev_month_start = prev_month_end.replace(day=1)
+
+    label_last = last_month_start.strftime("%B %Y")
+    label_prev = prev_month_start.strftime("%B %Y")
+
     tasks = []
     if faq_only:
         tasks.append({
@@ -128,12 +167,12 @@ def _deterministic_plan(question: str) -> list[dict]:
     elif needs_compare:
         tasks.append({
             "agent": "comparison_agent",
-            "intent": "Month-over-month comparison April vs May 2026",
+            "intent": f"Month-over-month comparison {label_prev} vs {label_last}",
             "filters": {
-                "period_a": {"start": "2026-04-01", "end": "2026-04-30"},
-                "period_b": {"start": "2026-05-01", "end": "2026-05-31"},
-                "label_a": "April 2026",
-                "label_b": "May 2026",
+                "period_a": {"start": str(prev_month_start), "end": str(prev_month_end)},
+                "period_b": {"start": str(last_month_start), "end": str(last_month_end)},
+                "label_a": label_prev,
+                "label_b": label_last,
             },
         })
         tasks.append({
@@ -144,10 +183,10 @@ def _deterministic_plan(question: str) -> list[dict]:
     else:
         tasks.append({
             "agent": "data_agent",
-            "intent": "Compute survey metrics for May 2026",
+            "intent": f"Compute survey metrics for {label_last}",
             "filters": {
-                "date_range": {"start": "2026-05-01", "end": "2026-05-31"},
-                "period_label": "May 2026",
+                "date_range": {"start": str(last_month_start), "end": str(last_month_end)},
+                "period_label": label_last,
             },
         })
     return tasks
@@ -185,10 +224,13 @@ def _plan(question: str) -> list[dict]:
         "Agent selection rules:\n"
         "1. Pure FAQ / policy question (e.g. 'What is your wait time target?') → rag_agent ONLY\n"
         "2. Pure metrics question (e.g. 'What is CSAT in May?') → data_agent ONLY\n"
-        "3. Mixed question needing data + context → data_agent + rag_agent\n"
-        "4. Comparison question → comparison_agent + rag_agent (skip data_agent, comparison runs DataAgent internally)\n"
-        "5. Infer the most relevant month(s) from the question. Default to May 2026 if unspecified.\n"
-        "6. Do NOT include summary_agent in the tasks list — it is added automatically.\n\n"
+        "3. Channel/segment comparison (e.g. 'email vs web', 'mobile users', 'staff complaints') → data_agent ONLY\n"
+        "   The data_agent's csat_by_segment tool handles all channel and theme filtering internally.\n"
+        "4. Mixed question needing data + context → data_agent + rag_agent\n"
+        "5. Comparison question (two months) → comparison_agent ONLY (skip data_agent, it runs DataAgent internally)\n"
+        "   Only add rag_agent if the question also asks about policy or business context.\n"
+        "6. Infer the most relevant month(s) from the question. Default to May 2026 if unspecified.\n"
+        "7. Do NOT include summary_agent in the tasks list — it is added automatically.\n\n"
         "Call create_execution_plan with an ordered, minimal task list."
     )
 
