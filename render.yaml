@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: minisense
+    runtime: python
+    region: oregon           # cheapest / lowest latency for US users
+    plan: free               # 512MB RAM, spins down after 15min inactivity
+
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn api.main:app --host 0.0.0.0 --port $PORT --timeout-keep-alive 75
+
+    # Environment variables — set these in Render dashboard, NOT here
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false          # Render will prompt you to enter value in dashboard
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.11.0        # Render free supports 3.11; avoids any 3.13 compat issues
+
+    # Health check — Render pings this to know the app is up
+    healthCheckPath: /health
